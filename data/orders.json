@@ -1,0 +1,48 @@
+[
+  {
+    "customerName": "Alex Rivera",
+    "email": "alex@example.com",
+    "totalAmount": 5398,
+    "status": "pending",
+    "createdAt": "2026-05-12T15:18:20.199Z",
+    "items": [
+      {
+        "id": "matsuri-tee",
+        "quantity": 1
+      },
+      {
+        "id": "tsuki-hoodie",
+        "quantity": 1
+      }
+    ],
+    "id": "ORD-1778599100199"
+  },
+  {
+    "customerName": "Sarah Chen",
+    "email": "sarah@example.com",
+    "totalAmount": 1899,
+    "status": "pending",
+    "createdAt": "2026-05-12T15:18:20.206Z",
+    "items": [
+      {
+        "id": "matsuri-tee",
+        "quantity": 1
+      }
+    ],
+    "id": "ORD-1778599100205"
+  },
+  {
+    "customerName": "Jordan Smith",
+    "email": "jordan@example.com",
+    "totalAmount": 2199,
+    "status": "pending",
+    "createdAt": "2026-05-12T15:18:20.209Z",
+    "items": [
+      {
+        "id": "ryujin-tee",
+        "quantity": 1
+      }
+    ],
+    "id": "ORD-1778599100209"
+  }
+]

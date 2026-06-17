@@ -1,0 +1,191 @@
+@import "tailwindcss";
+@source "..";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Zowear — Premium Japanese streetwear design system.
+   Dark luxury aesthetic. All tokens defined here. */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent-red: var(--accent-red);
+  --font-display: "Cormorant Garamond", "Georgia", serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-serif-jp: "Noto Serif JP", "Cormorant Garamond", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Custom animations */
+  --animate-reveal: reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+:root {
+  /* Zowear — Premium embroidery-gold token system */
+  --radius: 0rem;
+  --background: #0E0D0C;
+  --foreground: #F5F0E8;
+  --surface: #1A1917;
+  --surface-elevated: #222018;
+  --ink: #F5F0E8;
+  --ink-muted: #8A8377;
+  --card: #1A1917;
+  --card-foreground: #F5F0E8;
+  --popover: #1A1917;
+  --popover-foreground: #F5F0E8;
+  --primary: #F5F0E8;
+  --primary-foreground: #0E0D0C;
+  --secondary: #1A1917;
+  --secondary-foreground: #F5F0E8;
+  --muted: #1A1917;
+  --muted-foreground: #8A8377;
+  --accent: #2E2B28;
+  --accent-foreground: #F5F0E8;
+  --accent-red: #C8A96E;
+  --destructive: #C8A96E;
+  --destructive-foreground: #0E0D0C;
+  --border: #2E2B28;
+  --input: #2E2B28;
+  --ring: #C8A96E;
+}
+
+.dark { color-scheme: dark; }
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv11";
+    overflow-x: hidden;
+  }
+
+  /* Typography Enhancements */
+  .font-display { font-family: var(--font-display); letter-spacing: -0.04em; }
+  .font-serif-jp { font-family: var(--font-serif-jp); }
+  .font-mono { font-family: var(--font-mono); }
+
+  h1, h2, h3, h4 { @apply font-display tracking-[-0.05em]; }
+
+  /* Marquee */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .animate-marquee { animation: marquee 30s linear infinite; }
+
+  /* Noise Overlay */
+  .noise::after {
+    content: "";
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: overlay;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-white/5;
+  }
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-md border border-white/10;
+  }
+
+  /* Text Gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #C8A96E 0%, #E8D5A3 50%, #C8A96E 100%);
+  }
+
+  /* Selection */
+  ::selection { background: var(--accent-red); color: #0E0D0C; }
+
+  /* Scrollbar - Minimal & Stylish */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); transition: background 0.3s; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+  /* Hide scrollbars utility */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+
+  /* Reveal on Scroll Animation Class */
+  .reveal {
+    animation: var(--animate-reveal);
+  }
+}
+
+@layer utilities {
+  .mask-radial {
+    mask-image: radial-gradient(circle at center, black, transparent);
+  }
+  .mask-linear-b {
+    mask-image: linear-gradient(to bottom, black 60%, transparent);
+  }
+}
+

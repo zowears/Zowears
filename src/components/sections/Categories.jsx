@@ -1,0 +1,70 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
+
+import cat1 from "@/assets/Oversized Tees.jpg";
+import cat2 from "@/assets/Heavy Hoodies.jpg";
+import cat4 from "@/assets/Anime.jpg";
+import cat5 from "@/assets/Puff Printing.jpg";
+
+const cats = [
+  { name: "Oversized Tees", img: cat1, c: "tees" },
+  { name: "Heavy Hoodies", img: cat2, c: "hoodies" },
+  { name: "Anime", img: cat4, c: "embroidered" },
+  { name: "New Arrivals", img: cat5, c: "" },
+];
+
+export function Categories() {
+  return (
+    <section className="border-t border-white/5 bg-background py-14 ">
+      <div className="mx-auto max-w-[1600px] px-4 md:px-8">
+        <div className="mb-12 flex items-end justify-between md:mb-16">
+            <h2 className="mt-4 font-display text-4xl font-bold tracking-tighter md:text-7xl">
+              Shop by <span className="text-gradient">category</span>
+            </h2>
+          <Link
+            href="/shop"
+            className="group hidden items-center gap-3 text-[11px] font-bold uppercase tracking-[0.3em] md:inline-flex"
+          >
+            Explore all <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          {cats.map((c, i) => (
+            <motion.div
+              key={c.name}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Link
+                href={c.c ? `/shop?c=${c.c}` : "/shop"}
+                className="group relative block aspect-3/4.5 overflow-hidden bg-surface"
+              >
+                <Image
+                  src={c.img}
+                  alt={c.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 20vw"
+                  className="object-cover transition-transform duration-1500 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black via-black/10 to-transparent opacity-80 group-hover:opacity-40 transition-opacity duration-700" />
+                <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display text-xl font-bold tracking-tight md:text-4xl">{c.name}</h3>
+                  </div>
+                  <div className="mt-4 h-0.5 w-0 bg-accent-red transition-all duration-500 group-hover:w-full" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
