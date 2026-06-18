@@ -8,18 +8,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 
-const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
-const colors = [
-  { name: "Onyx", hex: "#0a0a0a" },
-  { name: "Bone", hex: "#e9e3d4" },
-  { name: "Mist", hex: "#bdbdbd" },
-  { name: "Smoke", hex: "#3a3a3a" },
-];
+const sizes = ["M", "L", "XL"];
+
 const cats = [
-  { id: "tees", label: "Oversized Tees" },
+  { id: "t-shirts", label: "T-shirts" },
   { id: "hoodies", label: "Hoodies" },
-  { id: "embroidered", label: "Embroidered Art" },
-  { id: "anime", label: "Arabic Calligraphy" },
+  { id: "sweatshirts", label: "Sweatshirts" },
+  { id: "plain-tess", label: "Plain Tess" },
 ];
 
 function ShopContent() {
@@ -91,7 +86,7 @@ function ShopContent() {
         </div>
         <input
           type="range"
-          min={1000}
+          min={2000}
           max={5000}
           step={100}
           value={price}
@@ -99,7 +94,7 @@ function ShopContent() {
           className="w-full accent-accent-red bg-white/10 h-1 rounded-full appearance-none cursor-pointer"
         />
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground/40">
-          <span>Rs. 1,000</span>
+          <span>Rs. 2,000</span>
           <span>Rs. 5,000</span>
         </div>
       </div>
@@ -118,22 +113,6 @@ function ShopContent() {
               }`}
             >
               {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-6 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Palette</div>
-        <div className="flex flex-wrap gap-3">
-          {colors.map((c) => (
-            <button
-              key={c.name}
-              className="group relative h-10 w-10 rounded-full border border-white/10 p-1 transition-transform hover:scale-110"
-              style={{ background: c.hex }}
-              aria-label={c.name}
-            >
-              <div className="absolute inset-0 rounded-full border-2 border-white/0 transition-all group-hover:border-white/20" />
             </button>
           ))}
         </div>
