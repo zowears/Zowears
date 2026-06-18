@@ -36,7 +36,9 @@ export default function ProductsPage() {
   const { data: products, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/products`);
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/products`, { headers });
       if (!res.ok) throw new Error("Failed to fetch products");
       return res.json();
     },
@@ -44,8 +46,11 @@ export default function ProductsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (formData) => {
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
       const res = await fetch(`${API_URL}/products`, {
         method: "POST",
+        headers,
         body: formData, // FormData handles multipart/form-data automatically
       });
       if (!res.ok) throw new Error("Failed to create product");
@@ -62,7 +67,12 @@ export default function ProductsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`${API_URL}/products/${id}`, { method: "DELETE" });
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/products/${id}`, { 
+        method: "DELETE",
+        headers
+      });
       if (!res.ok) throw new Error("Failed to delete product");
       return res.json();
     },
@@ -74,9 +84,14 @@ export default function ProductsPage() {
 
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, isFeatured }) => {
+      const token = localStorage.getItem("admin_token");
+      const headers = { 
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      };
       const res = await fetch(`${API_URL}/products/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ isFeatured }),
       });
       if (!res.ok) throw new Error("Failed to update status");

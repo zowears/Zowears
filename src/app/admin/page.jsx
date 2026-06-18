@@ -33,9 +33,12 @@ export default function AdminOverview() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const token = localStorage.getItem("admin_token");
+        const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+        
         const [productsRes, ordersRes] = await Promise.all([
-          fetch(`${API_URL}/products`),
-          fetch(`${API_URL}/orders`)
+          fetch(`${API_URL}/products`, { headers }),
+          fetch(`${API_URL}/orders`, { headers })
         ]);
         
         const products = await productsRes.json();

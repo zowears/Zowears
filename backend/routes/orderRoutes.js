@@ -3,9 +3,10 @@ const router = Router();
 import Order from '../models/Order.js';
 import { sendOrderConfirmationEmail } from '../utils/mail.js';
 import { sendWhatsAppOrderConfirmation } from '../utils/whatsapp.js';
+import auth from '../middleware/auth.js';
 
 // Get all orders
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -41,7 +42,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update order status
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(
       req.params.id,

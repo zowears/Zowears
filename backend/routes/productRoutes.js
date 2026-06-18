@@ -2,6 +2,7 @@ import { Router } from 'express';
 const router = Router();
 import Product from '../models/Product.js';
 import { upload } from '../config/cloudinary.js';
+import auth from '../middleware/auth.js';
 
 // Get all products
 router.get('/', async (req, res) => {
@@ -129,7 +130,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create product with multiple image upload
-router.post('/', upload.array('images', 10), async (req, res) => {
+router.post('/', auth, upload.array('images', 10), async (req, res) => {
   try {
     const { name, category, price, description, stock, badge, isFeatured } = req.body;
     const imageUrls = req.files ? req.files.map(f => f.path) : [];
@@ -155,7 +156,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 });
 
 // Update product (for featured toggle)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -169,7 +170,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete product
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Product deleted' });

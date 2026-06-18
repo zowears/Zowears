@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff, ShieldCheck, Loader2 } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [password, setPassword] = React.useState("");
@@ -34,13 +36,17 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch(`${API_URL}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
 
       if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("admin_token", data.token);
+        // Also set a client-side cookie so layout/middleware checks can read it if needed
+        document.cookie = `__admin_token_client=${data.token}; path=/; max-age=28800; SameSite=Strict`;
         router.replace("/admin");
         return;
       }

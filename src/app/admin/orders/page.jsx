@@ -25,7 +25,9 @@ export default function OrdersPage() {
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/orders`);
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/orders`, { headers });
       if (!res.ok) throw new Error("Failed to fetch orders");
       return res.json();
     },
@@ -33,9 +35,14 @@ export default function OrdersPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
+      const token = localStorage.getItem("admin_token");
+      const headers = { 
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      };
       const res = await fetch(`${API_URL}/orders/${id}`, { 
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ status })
       });
       if (!res.ok) throw new Error("Failed to update order");

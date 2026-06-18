@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { 
   LayoutDashboard, 
   Package, 
@@ -9,20 +10,53 @@ import {
   Settings, 
   ChevronRight,
   LogOut,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (pathname === "/admin/login") {
+      setAuthorized(true);
+      return;
+    }
+
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.replace("/admin/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [pathname, router]);
+
+  const handleLogout = async () => {
+    localStorage.removeItem("admin_token");
+    document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
+    
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    try {
+      await fetch(`${API_URL}/admin/logout`, { method: "POST" });
+    } catch (err) {
+      console.error("Logout request to backend failed:", err);
+    }
+    
+    router.replace("/admin/login");
+  };
 
   // Login page renders without the dashboard chrome
   if (pathname === "/admin/login") return <>{children}</>;
 
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.replace("/admin/login");
-  };
+  if (!authorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+      </div>
+    );
+  }
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/admin" },
