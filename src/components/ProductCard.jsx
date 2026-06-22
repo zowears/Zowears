@@ -19,7 +19,7 @@ export function ProductCard({ product, index }) {
       className="group"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
-        <Link href={`/product/${product.id}`} className="relative block h-full w-full">
+        <Link href={`/product/${product.slug || product.id}`} className="relative block h-full w-full">
           <Image
             src={product.image}
             alt={product.name}
@@ -69,7 +69,7 @@ export function ProductCard({ product, index }) {
 
       <div className="mt-6 space-y-2 px-1">
         <div className="flex items-start justify-between gap-4">
-          <Link href={`/product/${product.id}`}>
+          <Link href={`/product/${product.slug || product.id}`}>
             <h3 className="font-display text-lg font-bold tracking-tight text-foreground/90 transition-colors hover:text-accent-red">
               {product.name}
             </h3>

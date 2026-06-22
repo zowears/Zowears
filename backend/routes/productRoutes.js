@@ -118,10 +118,17 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// Get single product
-router.get('/:id', async (req, res) => {
+// Get single product (by ID or Slug)
+router.get('/:idOrSlug', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    let product;
+    const isObjectId = req.params.idOrSlug.match(/^[0-9a-fA-F]{24}$/);
+    if (isObjectId) {
+      product = await Product.findById(req.params.idOrSlug);
+    }
+    if (!product) {
+      product = await Product.findOne({ slug: req.params.idOrSlug });
+    }
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (error) {
@@ -132,7 +139,7 @@ router.get('/:id', async (req, res) => {
 // Create product with multiple image upload
 router.post('/', auth, upload.array('images', 10), async (req, res) => {
   try {
-    const { name, category, price, description, stock, badge, isFeatured } = req.body;
+    const { name, category, price, description, stock, badge, isFeatured, jp, compareAt } = req.body;
     const imageUrls = req.files ? req.files.map(f => f.path) : [];
     const primaryImage = imageUrls[0] || '';
 
@@ -144,6 +151,8 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       stock: Number(stock || 0),
       badge,
       isFeatured: isFeatured === 'true' || isFeatured === true,
+      jp,
+      compareAt: compareAt ? Number(compareAt) : undefined,
       image: primaryImage,
       images: imageUrls,
     });

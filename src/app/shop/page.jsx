@@ -14,7 +14,9 @@ const cats = [
   { id: "t-shirts", label: "T-shirts" },
   { id: "hoodies", label: "Hoodies" },
   { id: "sweatshirts", label: "Sweatshirts" },
-  { id: "plain-tess", label: "Plain Tess" },
+  { id: "plain-tees", label: "Plain Tees" },
+  { id: "embroidered", label: "Embroidered" },
+  { id: "anime", label: "Anime" },
 ];
 
 function ShopContent() {

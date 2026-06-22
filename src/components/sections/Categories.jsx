@@ -11,9 +11,9 @@ import cat4 from "@/assets/Anime.jpg";
 import cat5 from "@/assets/Puff Printing.jpg";
 
 const cats = [
-  { name: "Oversized Tees", img: cat1, c: "tees" },
+  { name: "Oversized Tees", img: cat1, c: "t-shirts" },
   { name: "Heavy Hoodies", img: cat2, c: "hoodies" },
-  { name: "Anime", img: cat4, c: "embroidered" },
+  { name: "Anime", img: cat4, c: "anime" },
   { name: "New Arrivals", img: cat5, c: "" },
 ];
 

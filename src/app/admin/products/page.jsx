@@ -27,10 +27,13 @@ export default function ProductsPage() {
   const [imageFiles, setImageFiles] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "tees",
+    category: "t-shirts",
     price: "",
+    compareAt: "",
     description: "",
-    stock: "0"
+    stock: "0",
+    badge: "",
+    jp: ""
   });
 
   const { data: products, isLoading } = useQuery({
@@ -60,7 +63,7 @@ export default function ProductsPage() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added successfully");
       setIsModalOpen(false);
-      setNewProduct({ name: "", category: "tees", price: "", description: "", stock: "0" });
+      setNewProduct({ name: "", category: "t-shirts", price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "" });
       setImageFiles([]);
     },
   });
@@ -135,8 +138,11 @@ export default function ProductsPage() {
     formData.append("name", newProduct.name);
     formData.append("category", newProduct.category);
     formData.append("price", newProduct.price);
+    formData.append("compareAt", newProduct.compareAt || "");
     formData.append("description", newProduct.description);
     formData.append("stock", newProduct.stock);
+    formData.append("badge", newProduct.badge || "");
+    formData.append("jp", newProduct.jp || "");
     imageFiles.forEach((file) => formData.append("images", file));
     createMutation.mutate(formData);
   };
@@ -262,16 +268,28 @@ export default function ProductsPage() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Name</label>
-                <input
-                  required
-                  type="text"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                  placeholder="e.g. Kyoto Oversized Tee"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Name</label>
+                  <input
+                    required
+                    type="text"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    placeholder="e.g. Kyoto Oversized Tee"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Japanese Text (Aesthetic)</label>
+                  <input
+                    type="text"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    placeholder="e.g. 新作"
+                    value={newProduct.jp}
+                    onChange={(e) => setNewProduct({ ...newProduct, jp: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -282,8 +300,10 @@ export default function ProductsPage() {
                     value={newProduct.category}
                     onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
                   >
-                    <option value="tees">Tees</option>
+                    <option value="t-shirts">T-shirts</option>
                     <option value="hoodies">Hoodies</option>
+                    <option value="sweatshirts">Sweatshirts</option>
+                    <option value="plain-tees">Plain Tees</option>
                     <option value="embroidered">Embroidered</option>
                     <option value="anime">Anime</option>
                   </select>
@@ -299,6 +319,41 @@ export default function ProductsPage() {
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Compare At Price (Rs.)</label>
+                  <input
+                    type="number"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    placeholder="e.g. 2499"
+                    value={newProduct.compareAt}
+                    onChange={(e) => setNewProduct({ ...newProduct, compareAt: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Stock Qty</label>
+                  <input
+                    required
+                    type="number"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    placeholder="100"
+                    value={newProduct.stock}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Badge</label>
+                <input
+                  type="text"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                  placeholder="e.g. Limited Edition, Sale"
+                  value={newProduct.badge}
+                  onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
