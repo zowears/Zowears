@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { 
-  LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Settings,
   ChevronRight,
   LogOut,
   User,
+  Scissors,
   Loader2
 } from "lucide-react";
 
@@ -36,14 +37,14 @@ export default function AdminLayout({ children }) {
   const handleLogout = async () => {
     localStorage.removeItem("admin_token");
     document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
-    
+
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     try {
       await fetch(`${API_URL}/admin/logout`, { method: "POST" });
     } catch (err) {
       console.error("Logout request to backend failed:", err);
     }
-    
+
     router.replace("/admin/login");
   };
 
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }) {
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/admin" },
     { name: "Products", icon: Package, href: "/admin/products" },
+    { name: "Designs", icon: Scissors, href: "/admin/designs" },
     { name: "Orders", icon: ShoppingCart, href: "/admin/orders" },
     { name: "Settings", icon: Settings, href: "/admin/settings" },
   ];

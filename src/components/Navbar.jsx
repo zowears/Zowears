@@ -16,6 +16,7 @@ const nav = [
   { label: "Hoodies", to: "/shop?c=hoodies" },
   { label: "T-shirts", to: "/shop?c=t-shirts" },
   { label: "Sweatshirts", to: "/shop?c=sweatshirts" },
+    { label: "Designs", to: "/designs" },
 ];
 
 export function Navbar() {
@@ -149,7 +150,7 @@ export function Navbar() {
               {/* </div> */}
               
               <div className="flex flex-col items-start leading-[0.8] justify-center">
-                <Image className="w-[150px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} />
+                <Image className="w-[150px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} priority />
                 {/* <span className="font-display text-xl sm:text-2xl font-black tracking-[-0.04em] text-white transition-colors duration-300 group-hover:text-accent-red">
                   ZOWEARS
                 </span>

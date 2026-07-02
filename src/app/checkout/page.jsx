@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   Calendar,
   CreditCard,
-  Truck
+  Truck,
+  Download
 } from "lucide-react";
 import { useCart } from "@/context/cart";
 import { formatPrice } from "@/lib/products";
@@ -32,6 +33,30 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [createdOrder, setCreatedOrder] = React.useState(null);
   const [successTab, setSuccessTab] = React.useState("receipt"); // "receipt" | "email"
+  const [downloadLinks, setDownloadLinks] = React.useState({});
+
+  React.useEffect(() => {
+    if (createdOrder && createdOrder.items) {
+      const digitalItems = createdOrder.items.filter(
+        (it) => it.size === "Digital" || it.category === "Embroidery Design"
+      );
+      if (digitalItems.length > 0) {
+        digitalItems.forEach(async (item) => {
+          try {
+            const res = await fetch(`${API_URL}/designs/${item.productId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.driveLink) {
+                setDownloadLinks((prev) => ({ ...prev, [item.productId]: data.driveLink }));
+              }
+            }
+          } catch (err) {
+            console.error("Failed to fetch design drive link:", err);
+          }
+        });
+      }
+    }
+  }, [createdOrder]);
 
   // Form State
   const [formData, setFormData] = React.useState({
@@ -256,6 +281,51 @@ export default function CheckoutPage() {
               >
                 {/* Shipping & Payment Details */}
                 <div className="md:col-span-7 bg-white/5 border border-white/5 p-8 space-y-8">
+                  {Object.keys(downloadLinks).length > 0 && (
+                    <div className="bg-accent-red/5 border border-accent-red/20 p-6 space-y-4">
+                      <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Embroidery Downloads
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Click the download buttons below to access your Google Drive embroidery design files (DST, PES, JEF, etc. - EMB excluded):
+                      </p>
+                      <div className="space-y-3">
+                        {createdOrder.items
+                          .filter((it) => it.size === "Digital" || it.category === "Embroidery Design")
+                          .map((item) => {
+                            const link = downloadLinks[item.productId];
+                            return (
+                              <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40 border border-white/5 p-4">
+                                <div>
+                                  <div className="text-[11px] font-bold uppercase tracking-wider text-white">
+                                    {item.name}
+                                  </div>
+                                  <div className="text-[9px] text-muted-foreground/60 uppercase tracking-widest mt-0.5">
+                                    Digital Design
+                                  </div>
+                                </div>
+                                {link ? (
+                                  <a
+                                    href={link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 bg-accent-red hover:bg-accent-red/90 text-black font-bold uppercase tracking-[0.15em] px-4 py-2 text-[9px] transition-all text-center justify-center cursor-pointer"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    Download from drive
+                                  </a>
+                                ) : (
+                                  <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest animate-pulse">
+                                    Generating Link...
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red mb-4">
                       Shipping Destination

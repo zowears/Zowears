@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { 
   TrendingUp, 
   Package, 
@@ -22,6 +23,7 @@ import { formatPrice } from "@/lib/products";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function AdminOverview() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     revenue: 0,
     orders: 0,
@@ -41,8 +43,23 @@ export default function AdminOverview() {
           fetch(`${API_URL}/orders`, { headers })
         ]);
         
+        if (productsRes.status === 401 || ordersRes.status === 401) {
+          localStorage.removeItem("admin_token");
+          document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
+          router.replace("/admin/login");
+          return;
+        }
+
+        if (!productsRes.ok || !ordersRes.ok) {
+          throw new Error(`Failed to fetch stats: products: ${productsRes.status}, orders: ${ordersRes.status}`);
+        }
+        
         const products = await productsRes.json();
         const orders = await ordersRes.json();
+        
+        if (!Array.isArray(products) || !Array.isArray(orders)) {
+          throw new Error("API response is not in array format");
+        }
         
         const revenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
         
@@ -60,7 +77,7 @@ export default function AdminOverview() {
     };
 
     fetchStats();
-  }, []);
+  }, [router]);
 
   const statCards = [
     {

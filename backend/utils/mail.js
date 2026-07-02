@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import Design from '../models/Design.js';
 
 // Helper to format currency
 const formatPrice = (p) => {
@@ -54,10 +55,33 @@ export async function sendOrderConfirmationEmail(order) {
     }
   }
 
+  // Resolve digital designs drive links
+  const resolvedItems = [];
+  if (order.items && order.items.length > 0) {
+    for (const item of order.items) {
+      const itemObj = item.toObject ? item.toObject() : item;
+      if (itemObj.size === "Digital" || itemObj.category === "Embroidery Design") {
+        try {
+          const designObj = await Design.findById(itemObj.productId);
+          if (designObj && designObj.driveLink) {
+            itemObj.driveLink = designObj.driveLink;
+          }
+        } catch (err) {
+          console.error("Error retrieving drive link for email confirmation:", err);
+        }
+      }
+      resolvedItems.push(itemObj);
+    }
+  }
+  const enrichedOrder = {
+    ...order.toObject ? order.toObject() : order,
+    items: resolvedItems
+  };
+
   const fromEmail = process.env.SMTP_FROM || 'Zowears Collective <orders@zowears.com>';
-  const toEmail = order.email;
-  const subject = `ZOWEARS COLLECTIVE - Order Confirmed #${order._id || 'Pending'}`;
-  const htmlContent = getTemplate(order);
+  const toEmail = enrichedOrder.email;
+  const subject = `ZOWEARS COLLECTIVE - Order Confirmed #${enrichedOrder._id || 'Pending'}`;
+  const htmlContent = getTemplate(enrichedOrder);
 
   try {
     const info = await transporter.sendMail({
@@ -95,6 +119,37 @@ export async function sendOrderConfirmationEmail(order) {
 }
 
 function getTemplate(order) {
+  const digitalItems = (order.items || []).filter((it) => it.driveLink);
+  let digitalDownloadsHtml = '';
+  if (digitalItems.length > 0) {
+    const downloadRows = digitalItems
+      .map(
+        (item) => `
+      <div style="margin-bottom: 16px; padding: 16px; background-color: #12100e; border: 1px solid #c8a96e; text-align: left;">
+        <div style="font-weight: bold; font-size: 14px; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Grotesk', sans-serif;">${item.name}</div>
+        <div style="font-size: 11px; color: #8a8377; margin-top: 4px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase;">Formats: DST, PES, JEF, XXX, VP3, HUS, EXP (EMB Excluded)</div>
+        <a href="${item.driveLink}" target="_blank" style="display: inline-block; margin-top: 12px; background-color: #c8a96e; color: #000000; text-decoration: none; padding: 10px 18px; font-weight: bold; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">
+          DOWNLOAD FROM DRIVE →
+        </a>
+      </div>
+    `
+      )
+      .join('');
+
+    digitalDownloadsHtml = `
+      <!-- Digital Downloads Section -->
+      <div style="margin-bottom: 40px; border: 1px solid #c8a96e; padding: 24px; background-color: #0d0c0b; text-align: center;">
+        <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.25em; color: #c8a96e; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace;">
+          // DIGITAL DOWNLOAD FILES
+        </div>
+        <p style="font-size: 12px; line-height: 1.6; color: #8a8377; margin: 0 0 20px 0; font-family: 'Space Grotesk', sans-serif;">
+          Click below to access your embroidery files via Google Drive folder.
+        </p>
+        ${downloadRows}
+      </div>
+    `;
+  }
+
   const itemsHtml = order.items
     .map((item) => {
       const qty = item.quantity || item.qty || 1;
@@ -182,6 +237,8 @@ function getTemplate(order) {
               Thank you, ${order.shippingAddress.firstName}. Your selection from the ZOWEAR Silhouette line has been confirmed and queue-marked for artisan assembly.
             </p>
           </div>
+
+          ${digitalDownloadsHtml}
 
           <!-- Streetwear-Style Order Progress Tracker -->
           <div style="text-align: center; margin: 40px 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #71717a; background-color: #070708; border: 1px solid #1c1c1e; padding: 16px 8px;">

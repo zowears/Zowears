@@ -36,6 +36,7 @@ export function Footer() {
               <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact US</Link></li>
               <li><Link href="/fabrics" className="hover:text-foreground transition-colors">Fabrics</Link></li>
               <li><Link href="/blogs" className="hover:text-foreground transition-colors">Blogs</Link></li>
+              <li><Link href="/designs" className="hover:text-foreground transition-colors">Designs</Link></li>
             </ul>
           </div>
 
@@ -52,10 +53,10 @@ export function Footer() {
         <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-wrap items-center gap-3 text-[9px] uppercase tracking-[0.3em] text-white/30 font-semibold">
             <span>Express Delivery to:</span>
-            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Dubai (UAE)</span> · 
-            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Riyadh (KSA)</span> · 
-            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Doha (Qatar)</span> · 
-            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Kuwait City</span> · 
+            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Dubai (UAE)</span> ·
+            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Riyadh (KSA)</span> ·
+            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Doha (Qatar)</span> ·
+            <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Kuwait City</span> ·
             <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Karachi (PK)</span> ·
             <span className="text-white/50 hover:text-accent-red transition-colors cursor-default">Worldwide</span>
           </div>
@@ -64,7 +65,7 @@ export function Footer() {
             <Link href="/returns" className="hover:text-foreground transition-colors">Return Policy</Link>
           </div>
         </div>
-        
+
         <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
             ©ZOWEARS COLLECTIVE-2026 · Karachi · Dubai · Riyadh
