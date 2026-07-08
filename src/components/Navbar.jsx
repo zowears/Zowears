@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, User, Menu, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/context/cart";
 import { cn } from "@/lib/utils";
 import Logo from "@/assets/Zowear.png";
@@ -24,52 +25,54 @@ export function Navbar() {
   const [mobile, setMobile] = React.useState(false);
   const [search, setSearch] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchResults, setSearchResults] = React.useState([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const { count, setOpen } = useCart();
+
+  // Debounce search query (500ms) - only search if >= 2 characters
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        setDebouncedQuery(searchQuery);
+      } else {
+        setDebouncedQuery("");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Only fetch if we have a debounced query
+  const { data: searchResults = [], isLoading: isSearching } = useQuery({
+    queryKey: ["search", debouncedQuery],
+    queryFn: async () => {
+      if (!debouncedQuery.trim()) return [];
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      const res = await fetch(`${API_URL}/products/search?q=${encodeURIComponent(debouncedQuery)}`);
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      return data.map(p => ({
+        ...p,
+        id: p._id,
+        jp: p.jp || "新作",
+        rating: p.rating || 5.0,
+        reviews: p.reviews || 0,
+        colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
+        sizes: p.sizes || ["S", "M", "L", "XL"],
+      }));
+    },
+    enabled: debouncedQuery.length >= 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000,
+  });
 
   const closeSearch = () => {
     setSearch(false);
     setSearchQuery("");
-    setSearchResults([]);
   };
 
   const handleTagClick = (tag) => {
     setSearchQuery(tag);
   };
-
-  React.useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const delayDebounce = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-        const res = await fetch(`${API_URL}/products/search?q=${encodeURIComponent(searchQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.map(p => ({
-            ...p,
-            id: p._id,
-            jp: p.jp || "新作",
-            rating: p.rating || 5.0,
-            reviews: p.reviews || 0,
-            colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
-            sizes: p.sizes || ["S", "M", "L", "XL"],
-          })));
-        }
-      } catch (err) {
-        console.error("Search fetch error:", err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

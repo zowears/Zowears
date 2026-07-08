@@ -68,7 +68,7 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
-            ©ZOWEARS COLLECTIVE-2026 · Karachi · Dubai · Riyadh
+            ©ZOWEARS COLLECTIVE-2026 · Karachi
           </div>
         </div>
       </div>

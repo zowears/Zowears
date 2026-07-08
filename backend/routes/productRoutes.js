@@ -4,11 +4,32 @@ import Product from '../models/Product.js';
 import { upload } from '../config/cloudinary.js';
 import auth from '../middleware/auth.js';
 
-// Get all products
+// Get all products with pagination
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.json(products);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 50);
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      Product.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .select('-__v'),
+      Product.countDocuments()
+    ]);
+
+    res.json({
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -22,99 +43,36 @@ router.get('/search', async (req, res) => {
       return res.json([]);
     }
 
-    const words = queryStr.toLowerCase().split(/\s+/).filter(Boolean);
-    
-    // Semantic Expansion Dictionary
-    const SEMANTIC_DICTIONARY = {
-      warm: ['hoodie', 'heavyweight', 'winter', 'sweater', 'jacket', 'fleece', 'wool'],
-      cold: ['hoodie', 'heavyweight', 'winter', 'sweater', 'jacket', 'fleece', 'wool'],
-      cozy: ['hoodie', 'heavyweight', 'winter', 'sweater', 'jacket', 'fleece', 'wool'],
-      winter: ['hoodie', 'heavyweight', 'jacket', 'embroidered', 'fleece'],
-      summer: ['t-shirt', 'tee', 'lightweight', 'cotton', 'shorts'],
-      hot: ['t-shirt', 'tee', 'lightweight', 'cotton', 'shorts'],
-      cool: ['t-shirt', 'tee', 'lightweight', 'cotton', 'shorts'],
-      loose: ['oversized', 'relaxed', 'baggy'],
-      baggy: ['oversized', 'relaxed', 'loose'],
-      big: ['oversized', 'relaxed'],
-      traditional: ['calligraphy', 'jp', 'embroidery', 'embroidered', 'heritage'],
-      japanese: ['calligraphy', 'jp', 'embroidery', 'embroidered', 'heritage'],
-      art: ['calligraphy', 'graphics', 'embroidered', 'print'],
-      graphics: ['print', 'tee', 'graphic', 'calligraphy'],
-      premium: ['heavyweight', 'luxury', 'quality', 'embroidered'],
-      luxury: ['heavyweight', 'premium', 'quality', 'embroidered'],
-      heavy: ['heavyweight', 'hoodie'],
-      outerwear: ['jacket', 'hoodie', 'zip-up'],
-      tops: ['t-shirt', 'tee', 'hoodie', 'sweater'],
-    };
+    // Use MongoDB text search with proper indexes
+    const products = await Product.find(
+      { $text: { $search: queryStr } },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" }, isFeatured: -1 })
+      .limit(20)
+      .lean()
+      .select('-__v');
 
-    // Find synonyms
-    let synonyms = [];
-    words.forEach(word => {
-      if (SEMANTIC_DICTIONARY[word]) {
-        synonyms.push(...SEMANTIC_DICTIONARY[word]);
-      }
-    });
-    // Remove duplicates
-    synonyms = [...new Set(synonyms)];
-
-    // Fetch all products to perform hybrid scoring
-    const products = await Product.find();
-
-    // Score and filter
-    const scoredProducts = products.map(product => {
-      let score = 0;
-      const name = (product.name || '').toLowerCase();
-      const desc = (product.description || '').toLowerCase();
-      const cat = (product.category || '').toLowerCase();
-      const jp = (product.jp || '').toLowerCase();
-      const badge = (product.badge || '').toLowerCase();
-
-      // 1. Direct word matches
-      words.forEach(word => {
-        if (name === word) {
-          score += 15; // exact match
-        } else if (name.includes(word)) {
-          score += 10;
-        }
-        if (cat.includes(word)) {
-          score += 6;
-        }
-        if (jp.includes(word)) {
-          score += 6;
-        }
-        if (badge.includes(word)) {
-          score += 4;
-        }
-        if (desc.includes(word)) {
-          score += 3;
-        }
-      });
-
-      // 2. Semantic synonym matches
-      synonyms.forEach(syn => {
-        if (name.includes(syn)) {
-          score += 5;
-        }
-        if (cat.includes(syn)) {
-          score += 3;
-        }
-        if (desc.includes(syn)) {
-          score += 1.5;
-        }
-      });
-
-      return { product, score };
-    });
-
-    // Filter out products with score = 0 and sort by score descending
-    const results = scoredProducts
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.product);
-
-    res.json(results);
+    res.json(products);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // Fallback to regex search if text search fails
+    try {
+      const regex = new RegExp(req.query.q, 'i');
+      const products = await Product.find({
+        $or: [
+          { name: regex },
+          { category: regex },
+          { jp: regex },
+          { badge: regex }
+        ]
+      })
+        .limit(20)
+        .lean()
+        .select('-__v');
+      res.json(products);
+    } catch (fallbackError) {
+      res.status(500).json({ message: fallbackError.message });
+    }
   }
 });
 

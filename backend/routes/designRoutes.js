@@ -28,11 +28,32 @@ function getPublicIdFromUrl(url) {
   }
 }
 
-// Get all designs
+// Get all designs with pagination
 router.get('/', async (req, res) => {
   try {
-    const designs = await Design.find().sort({ createdAt: -1 });
-    res.json(designs);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 50);
+    const skip = (page - 1) * limit;
+
+    const [designs, total] = await Promise.all([
+      Design.find({ status: 'Active' })
+        .sort({ isFeatured: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .select('-__v'),
+      Design.countDocuments({ status: 'Active' })
+    ]);
+
+    res.json({
+      data: designs,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -46,35 +67,36 @@ router.get('/search', async (req, res) => {
       return res.json([]);
     }
 
-    const words = queryStr.toLowerCase().split(/\s+/).filter(Boolean);
-    const designs = await Design.find();
+    // Use MongoDB text search with proper indexes
+    const designs = await Design.find(
+      { $text: { $search: queryStr }, status: 'Active' },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" }, isFeatured: -1 })
+      .limit(20)
+      .lean()
+      .select('-__v');
 
-    const scoredDesigns = designs.map(design => {
-      let score = 0;
-      const name = (design.name || '').toLowerCase();
-      const desc = (design.description || '').toLowerCase();
-      const cat = (design.category || '').toLowerCase();
-      const designType = (design.designType || '').toLowerCase();
-
-      words.forEach(word => {
-        if (name === word) score += 15;
-        else if (name.includes(word)) score += 10;
-        if (cat.includes(word)) score += 6;
-        if (designType.includes(word)) score += 4;
-        if (desc.includes(word)) score += 3;
-      });
-
-      return { design, score };
-    });
-
-    const results = scoredDesigns
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.design);
-
-    res.json(results);
+    res.json(designs);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // Fallback to regex search if text search fails
+    try {
+      const regex = new RegExp(req.query.q, 'i');
+      const designs = await Design.find({
+        status: 'Active',
+        $or: [
+          { name: regex },
+          { designType: regex },
+          { category: regex }
+        ]
+      })
+        .limit(20)
+        .lean()
+        .select('-__v');
+      res.json(designs);
+    } catch (fallbackError) {
+      res.status(500).json({ message: fallbackError.message });
+    }
   }
 });
 

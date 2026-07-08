@@ -1,20 +1,24 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  slug: { type: String, unique: true },
+  name: { type: String, required: true, index: true },
+  slug: { type: String, unique: true, sparse: true, index: true },
   jp: { type: String },
-  category: { type: String, required: true },
-  price: { type: Number, required: true },
+  category: { type: String, required: true, index: true },
+  price: { type: Number, required: true, index: true },
   compareAt: { type: Number },
   image: { type: String, required: true },
   images: [{ type: String }],
-  description: { type: String },
-  stock: { type: Number, default: 0 },
+  description: { type: String, text: true },
+  stock: { type: Number, default: 0, index: true },
   badge: { type: String },
-  isFeatured: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
+  isFeatured: { type: Boolean, default: false, index: true },
+  createdAt: { type: Date, default: Date.now, index: true }
 });
+
+// Create compound index for common queries
+productSchema.index({ category: 1, isFeatured: 1 });
+productSchema.index({ name: "text", description: "text", jp: "text" }, { default_language: "english" });
 
 // Auto-generate slug from name before saving
 productSchema.pre('save', async function () {

@@ -1,14 +1,17 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-export async function fetchDesigns() {
+export async function fetchDesigns(page = 1, limit = 100) {
   try {
-    const res = await fetch(`${API_URL}/designs`);
+    const res = await fetch(`${API_URL}/designs?page=${page}&limit=${limit}`);
     if (!res.ok) throw new Error("Failed to fetch designs");
-    const data = await res.json();
+    const result = await res.json();
 
-    return data.map(d => ({
+    // Handle both paginated and flat response formats
+    const designs = Array.isArray(result) ? result : (result.data || []);
+
+    return designs.map(d => ({
       ...d,
-      id: d._id,
+      id: d._id || d.id,
     }));
   } catch (error) {
     console.error("Fetch designs error:", error);
@@ -23,7 +26,7 @@ export async function fetchDesign(id) {
     const d = await res.json();
     return {
       ...d,
-      id: d._id,
+      id: d._id || d.id,
     };
   } catch (error) {
     console.error("Fetch design error:", error);

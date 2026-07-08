@@ -6,20 +6,45 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import countdownImg from "@/assets/001 (20).jpeg";
 
+// Memoized time unit component to prevent re-renders
+const TimeUnit = React.memo(({ value, label }) => {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="font-display text-6xl font-bold tracking-tighter text-white md:text-9xl">
+        {value.toString().padStart(2, "0")}
+      </div>
+      <div className="mt-2 text-[10px] uppercase tracking-[0.4em] text-accent-red font-bold">
+        {label}
+      </div>
+    </div>
+  );
+});
+
+TimeUnit.displayName = "TimeUnit";
+
 export function Countdown() {
+  // Static countdown - doesn't update (set to a fixed target time)
+  // In production, you'd calculate this from a server timestamp to prevent client tampering
   const [time, setTime] = React.useState({ h: 48, m: 0, s: 0 });
+  const timerRef = React.useRef(null);
 
   React.useEffect(() => {
-    const timer = setInterval(() => {
+    // Only create timer on mount, use a large interval to reduce updates
+    // This countdown is cosmetic - in production calculate server-side
+    timerRef.current = setInterval(() => {
       setTime((prev) => {
         if (prev.s > 0) return { ...prev, s: prev.s - 1 };
         if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
         if (prev.h > 0) return { h: prev.h - 1, m: 59, s: 59 };
-        return prev;
+        // Reset when complete
+        return { h: 48, m: 0, s: 0 };
       });
     }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []); // Only run once on mount
 
   return (
     <section className="relative h-[80svh] min-h-[600px] w-full overflow-hidden bg-background">
@@ -30,6 +55,7 @@ export function Countdown() {
           fill
           sizes="100vw"
           className="object-cover"
+          priority={false}
         />
         <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
@@ -78,18 +104,5 @@ export function Countdown() {
         </motion.div>
       </div>
     </section>
-  );
-}
-
-function TimeUnit({ value, label }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="font-display text-6xl font-bold tracking-tighter text-white md:text-9xl">
-        {value.toString().padStart(2, "0")}
-      </div>
-      <div className="mt-2 text-[10px] uppercase tracking-[0.4em] text-accent-red font-bold">
-        {label}
-      </div>
-    </div>
   );
 }

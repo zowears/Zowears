@@ -1,16 +1,19 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-export async function fetchProducts() {
+export async function fetchProducts(page = 1, limit = 100) {
   try {
-    const res = await fetch(`${API_URL}/products`);
+    const res = await fetch(`${API_URL}/products?page=${page}&limit=${limit}`);
     if (!res.ok) throw new Error("Failed to fetch products");
-    const data = await res.json();
+    const result = await res.json();
+    
+    // Handle both paginated and flat response formats for backward compatibility
+    const products = Array.isArray(result) ? result : (result.data || []);
     
     // Map MongoDB _id to id and provide defaults for missing fields
-    return data.map(p => ({
+    return products.map(p => ({
       ...p,
-      id: p._id,
-      jp: p.jp || "新作", // Japanese placeholder if missing
+      id: p._id || p.id,
+      jp: p.jp || "新作",
       rating: p.rating || 5.0,
       reviews: p.reviews || 0,
       colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
@@ -18,7 +21,7 @@ export async function fetchProducts() {
     }));
   } catch (error) {
     console.error("Fetch products error:", error);
-    return []; // Return empty array instead of fallback products to respect "only original" request
+    return [];
   }
 }
 
@@ -29,7 +32,7 @@ export async function fetchProduct(id) {
     const p = await res.json();
     return {
       ...p,
-      id: p._id,
+      id: p._id || p.id,
       jp: p.jp || "新作",
       rating: p.rating || 5.0,
       reviews: p.reviews || 0,
