@@ -14,7 +14,15 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://zowears.vercel.app",
+      "http://localhost:3000"
+    ],
+    credentials: true
+  })
+);
 app.use(express.json());
 
 // Routes

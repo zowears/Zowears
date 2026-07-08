@@ -16,6 +16,8 @@ const designSchema = new mongoose.Schema({
   driveLink: { type: String, required: true }, // Google Drive download link
   category: { type: String, default: 'General' },
   isFeatured: { type: Boolean, default: false },
+  status: { type: String, enum: ['Active', 'Draft'], default: 'Active' },
+  tags: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
 
