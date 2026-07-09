@@ -308,8 +308,6 @@ export default function ProductsPage() {
                     <option value="hoodies">Hoodies</option>
                     <option value="sweatshirts">Sweatshirts</option>
                     <option value="plain-tees">Plain Tees</option>
-                    <option value="embroidered">Embroidered</option>
-                    <option value="anime">Anime</option>
                   </select>
                 </div>
                 <div className="space-y-2">

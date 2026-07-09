@@ -7,6 +7,9 @@ import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import designRoutes from './routes/designRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import colorRoutes from './routes/colorRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 
 const app = express();
@@ -51,6 +54,9 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/designs', designRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/colors', colorRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 app.get('/', (req, res) => {

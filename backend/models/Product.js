@@ -1,24 +1,75 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
+  // Basic Information
   name: { type: String, required: true, index: true },
   slug: { type: String, unique: true, sparse: true, index: true },
+  description: { type: String },
+  sku: { type: String, unique: true, sparse: true, index: true },
+  brand: { type: String },
   jp: { type: String },
-  category: { type: String, required: true, index: true },
-  price: { type: Number, required: true, index: true },
-  compareAt: { type: Number },
-  image: { type: String, required: true },
-  images: [{ type: String }],
-  description: { type: String, text: true },
-  stock: { type: Number, default: 0, index: true },
-  badge: { type: String },
+  
+  // Category & Status
+  category: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true,
+    index: true 
+  },
+  status: { 
+    type: String,
+    enum: ['active', 'draft', 'archived'],
+    default: 'active',
+    index: true
+  },
   isFeatured: { type: Boolean, default: false, index: true },
-  createdAt: { type: Date, default: Date.now, index: true }
+  
+  // Pricing
+  costPrice: { type: Number, default: 0 },
+  price: { type: Number, required: true, index: true },
+  comparePrice: { type: Number },
+  discountPercentage: { type: Number, default: 0 },
+  
+  // Inventory
+  stock: { type: Number, default: 0, index: true },
+  lowStockThreshold: { type: Number, default: 10 },
+  trackInventory: { type: Boolean, default: true },
+  
+  // Variants
+  colors: [{
+    colorId: mongoose.Schema.Types.ObjectId,
+    name: String,
+    hexCode: String
+  }],
+  sizes: [{ type: String }],
+  
+  // Images
+  images: [{
+    url: { type: String, required: true },
+    isPrimary: { type: Boolean, default: false }
+  }],
+  image: { type: String }, // Primary image for backward compatibility
+  badge: { type: String },
+  
+  // Analytics
+  totalSold: { type: Number, default: 0 },
+  totalRevenue: { type: Number, default: 0 },
+  
+  // Timestamps
+  createdAt: { type: Date, default: Date.now, index: true },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-// Create compound index for common queries
-productSchema.index({ category: 1, isFeatured: 1 });
-productSchema.index({ name: "text", description: "text", jp: "text" }, { default_language: "english" });
+// Calculate discount percentage before saving
+productSchema.pre('save', async function () {
+  if (this.comparePrice && this.price) {
+    this.discountPercentage = Math.round(
+      ((this.comparePrice - this.price) / this.comparePrice) * 100
+    );
+  }
+  
+  this.updatedAt = Date.now();
+});
 
 // Auto-generate slug from name before saving
 productSchema.pre('save', async function () {
@@ -30,5 +81,11 @@ productSchema.pre('save', async function () {
       .replace(/(^-|-$)+/g, '');
   }
 });
+
+// Create indexes for common queries
+productSchema.index({ category: 1, isFeatured: 1 });
+productSchema.index({ category: 1, status: 1 });
+productSchema.index({ stock: 1, lowStockThreshold: 1 });
+productSchema.index({ name: "text", description: "text", jp: "text" }, { default_language: "english" });
 
 export default mongoose.model('Product', productSchema);

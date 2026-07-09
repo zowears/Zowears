@@ -15,8 +15,6 @@ const cats = [
   { id: "hoodies", label: "Hoodies" },
   { id: "sweatshirts", label: "Sweatshirts" },
   { id: "plain-tees", label: "Plain Tees" },
-  { id: "embroidered", label: "Embroidered" },
-  { id: "anime", label: "Anime" },
 ];
 
 function ShopContent() {
@@ -98,25 +96,6 @@ function ShopContent() {
         <div className="mt-2 flex justify-between text-[10px] text-muted-foreground/40">
           <span>Rs. 2,000</span>
           <span>Rs. 5,000</span>
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-6 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Size guide</div>
-        <div className="grid grid-cols-3 gap-2">
-          {sizes.map((s) => (
-            <button
-              key={s}
-              onClick={() =>
-                setSize((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
-              }
-              className={`flex h-12 items-center justify-center border text-[10px] font-bold transition-all ${
-                size.includes(s) ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
         </div>
       </div>
     </div>
