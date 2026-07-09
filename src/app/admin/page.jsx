@@ -54,12 +54,12 @@ export default function AdminOverview() {
           throw new Error(`Failed to fetch stats: products: ${productsRes.status}, orders: ${ordersRes.status}`);
         }
         
-        const products = await productsRes.json();
-        const orders = await ordersRes.json();
+        const productsData = await productsRes.json();
+        const ordersData = await ordersRes.json();
         
-        if (!Array.isArray(products) || !Array.isArray(orders)) {
-          throw new Error("API response is not in array format");
-        }
+        // Handle both paginated response format { data, pagination } and array format
+        const products = Array.isArray(productsData) ? productsData : (productsData.data || []);
+        const orders = Array.isArray(ordersData) ? ordersData : (ordersData.data || []);
         
         const revenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
         

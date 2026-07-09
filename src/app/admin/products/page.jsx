@@ -36,16 +36,20 @@ export default function ProductsPage() {
     jp: ""
   });
 
-  const { data: products, isLoading } = useQuery({
+  const { data: productsData, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const token = localStorage.getItem("admin_token");
       const headers = token ? { "Authorization": `Bearer ${token}` } : {};
       const res = await fetch(`${API_URL}/products`, { headers });
       if (!res.ok) throw new Error("Failed to fetch products");
-      return res.json();
+      const data = await res.json();
+      // Handle both paginated response format { data, pagination } and array format
+      return Array.isArray(data) ? data : (data.data || []);
     },
   });
+
+  const products = productsData;
 
   const createMutation = useMutation({
     mutationFn: async (formData) => {

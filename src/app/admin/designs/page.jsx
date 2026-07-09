@@ -105,14 +105,18 @@ export default function AdminDesignsPage() {
   // Delete Confirm ID State
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
-  const { data: designs, isLoading } = useQuery({
+  const { data: designsData, isLoading } = useQuery({
     queryKey: ["admin-designs"],
     queryFn: async () => {
       const res = await fetch(`${API_URL}/designs`);
       if (!res.ok) throw new Error("Failed to fetch designs");
-      return res.json();
+      const data = await res.json();
+      // Handle both paginated response format { data, pagination } and array format
+      return Array.isArray(data) ? data : (data.data || []);
     },
   });
+
+  const designs = designsData;
 
   const createMutation = useMutation({
     mutationFn: async (payload) => {

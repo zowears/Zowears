@@ -22,16 +22,20 @@ export default function OrdersPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: ordersData, isLoading } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
       const token = localStorage.getItem("admin_token");
       const headers = token ? { "Authorization": `Bearer ${token}` } : {};
       const res = await fetch(`${API_URL}/orders`, { headers });
       if (!res.ok) throw new Error("Failed to fetch orders");
-      return res.json();
+      const data = await res.json();
+      // Handle both paginated response format { data, pagination } and array format
+      return Array.isArray(data) ? data : (data.data || []);
     },
   });
+
+  const orders = ordersData;
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
