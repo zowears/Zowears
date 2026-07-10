@@ -33,10 +33,24 @@ export default function ProductPage() {
 
   React.useEffect(() => {
     if (p) {
-      setSize(p.sizes[1] ?? p.sizes[0]);
-      setColor(p.colors[0]?.name || "Onyx");
+      const defaultColor = p.colors[0]?.name || "Onyx";
+      setColor(defaultColor);
+      
+      const colorObj = p.colors?.find(c => c.name === defaultColor);
+      const sizesForColor = (colorObj?.sizes?.length > 0) ? colorObj.sizes : p.sizes;
+      
+      setSize(sizesForColor?.[1] ?? sizesForColor?.[0]);
     }
   }, [p]);
+
+  const selectedColorObj = p?.colors?.find(c => c.name === color);
+  const availableSizes = selectedColorObj?.sizes?.length > 0 ? selectedColorObj.sizes : (p?.sizes || []);
+
+  React.useEffect(() => {
+    if (availableSizes.length > 0 && !availableSizes.includes(size)) {
+      setSize(availableSizes[0]);
+    }
+  }, [color, availableSizes, size]);
 
   if (isLoading) {
     return (
@@ -160,7 +174,7 @@ export default function ProductPage() {
                   <span className="text-[10px] font-bold text-muted-foreground">{size}</span>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  {p.sizes.map((s) => (
+                  {availableSizes.map((s) => (
                     <button
                       key={s}
                       onClick={() => setSize(s)}

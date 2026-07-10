@@ -261,7 +261,7 @@ export function Navbar() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent-red">
-                              {product.category}
+                              {product.category?.name || product.category}
                             </span>
                             {product.badge && (
                               <span className="bg-accent-red px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.1em] text-white">

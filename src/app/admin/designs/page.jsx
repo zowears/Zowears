@@ -108,7 +108,7 @@ export default function AdminDesignsPage() {
   const { data: designsData, isLoading } = useQuery({
     queryKey: ["admin-designs"],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/designs`);
+      const res = await fetch(`${API_URL}/designs`, { cache: 'no-store' });
       if (!res.ok) throw new Error("Failed to fetch designs");
       const data = await res.json();
       // Handle both paginated response format { data, pagination } and array format

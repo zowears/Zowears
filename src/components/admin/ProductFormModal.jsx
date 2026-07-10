@@ -29,7 +29,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
     lowStockThreshold: "10",
     trackInventory: true,
     colors: [],
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["M", "L", "XL"],
     jp: "",
     badge: "",
   });
@@ -82,8 +82,17 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
         stock: product.stock || "",
         lowStockThreshold: product.lowStockThreshold || "10",
         trackInventory: product.trackInventory !== false,
-        colors: product.colors || [],
-        sizes: product.sizes || ["S", "M", "L", "XL"],
+        colors: product.colors?.map(c => {
+          // Backward compatibility if color was stored as just string ID or object without colorId
+          const cId = c.colorId || c._id || (typeof c === 'string' ? c : "");
+          return {
+            colorId: cId,
+            name: c.name || "",
+            hexCode: c.hexCode || "",
+            sizes: c.sizes || []
+          };
+        }) || [],
+        sizes: product.sizes || ["M", "L", "XL"],
         jp: product.jp || "",
         badge: product.badge || "",
       });
@@ -116,12 +125,39 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleColorToggle = (colorId) => {
+  const handleColorToggle = (colorObj) => {
+    setFormData((prev) => {
+      const isSelected = prev.colors.some(c => c.colorId === colorObj._id);
+      if (isSelected) {
+        return {
+          ...prev,
+          colors: prev.colors.filter(c => c.colorId !== colorObj._id)
+        };
+      } else {
+        return {
+          ...prev,
+          colors: [
+            ...prev.colors, 
+            { colorId: colorObj._id, name: colorObj.name, hexCode: colorObj.hexCode, sizes: [] }
+          ]
+        };
+      }
+    });
+  };
+
+  const handleColorSizeToggle = (colorId, size) => {
     setFormData((prev) => ({
       ...prev,
-      colors: prev.colors.includes(colorId)
-        ? prev.colors.filter((id) => id !== colorId)
-        : [...prev.colors, colorId],
+      colors: prev.colors.map(c => {
+        if (c.colorId === colorId) {
+          const hasSize = c.sizes.includes(size);
+          return {
+            ...c,
+            sizes: hasSize ? c.sizes.filter(s => s !== size) : [...c.sizes, size]
+          };
+        }
+        return c;
+      })
     }));
   };
 
@@ -365,53 +401,112 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
             </div>
           </div>
 
-          {/* Variants - Colors */}
+          {/* Variants - Colors and Sizes per Color */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Available Colors</h3>
             <div className="flex flex-wrap gap-2">
-              {colors.map((color) => (
-                <button
-                  key={color._id}
-                  type="button"
-                  onClick={() => handleColorToggle(color._id)}
-                  className={`px-3 py-2 rounded-lg border-2 transition flex items-center gap-2 ${
-                    formData.colors.includes(color._id)
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: color.hexCode }}
-                  />
-                  <span className="text-sm font-medium">{color.name}</span>
-                  {formData.colors.includes(color._id) && (
-                    <Check className="w-4 h-4 text-blue-500" />
-                  )}
-                </button>
-              ))}
+              {colors.map((color) => {
+                const isSelected = formData.colors.some(c => c.colorId === color._id);
+                return (
+                  <button
+                    key={color._id}
+                    type="button"
+                    onClick={() => handleColorToggle(color)}
+                    className={`px-3 py-2 rounded-lg border-2 transition flex items-center gap-2 ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div
+                      className="w-4 h-4 rounded border border-gray-200"
+                      style={{ backgroundColor: color.hexCode }}
+                    />
+                    <span className="text-sm font-medium">{color.name}</span>
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-blue-500" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          {/* Variants - Sizes */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Available Sizes</h3>
-            <div className="flex flex-wrap gap-2">
-              {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => handleSizeToggle(size)}
-                  className={`px-4 py-2 rounded-lg border-2 transition font-medium ${
-                    formData.sizes.includes(size)
-                      ? "border-blue-500 bg-blue-50 text-blue-900"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
+            {formData.colors.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <h4 className="text-md font-medium text-gray-700">Select Sizes for Each Color:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {formData.colors.map(selectedColor => (
+                    <div key={selectedColor.colorId} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div 
+                          className="w-4 h-4 rounded border border-gray-300" 
+                          style={{ backgroundColor: selectedColor.hexCode }} 
+                        />
+                        <span className="font-semibold text-gray-800">{selectedColor.name}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {["M", "L", "XL"].map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleColorSizeToggle(selectedColor.colorId, size)}
+                            className={`px-3 py-1 text-sm rounded-md border transition font-medium ${
+                              selectedColor.sizes.includes(size)
+                                ? "border-blue-500 bg-blue-100 text-blue-900"
+                                : "border-gray-300 bg-white hover:border-gray-400"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Product Variant Preview Table */}
+            {formData.colors.length > 0 && (
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Product Preview</h3>
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available Sizes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {formData.colors.map(color => (
+                        <tr key={color.colorId}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full border shadow-sm" style={{ backgroundColor: color.hexCode }} />
+                              <span className="text-sm text-gray-900 font-medium">{color.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {color.sizes.length > 0 ? (
+                              <div className="flex gap-1.5">
+                                {color.sizes.map(s => (
+                                  <span key={s} className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                                    {s}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic text-xs">No sizes selected</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Images */}

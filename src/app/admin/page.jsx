@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { 
   TrendingUp, 
   Package, 
@@ -24,91 +24,76 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function AdminOverview() {
   const router = useRouter();
-  const [stats, setStats] = useState({
-    revenue: 0,
-    orders: 0,
-    products: 0,
-    customers: 0,
-  });
-  const [recentSales, setRecentSales] = useState([]);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem("admin_token");
-        const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-        
-        const [productsRes, ordersRes] = await Promise.all([
-          fetch(`${API_URL}/products`, { headers }),
-          fetch(`${API_URL}/orders`, { headers })
-        ]);
-        
-        if (productsRes.status === 401 || ordersRes.status === 401) {
-          localStorage.removeItem("admin_token");
-          document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
-          router.replace("/admin/login");
-          return;
-        }
-
-        if (!productsRes.ok || !ordersRes.ok) {
-          throw new Error(`Failed to fetch stats: products: ${productsRes.status}, orders: ${ordersRes.status}`);
-        }
-        
-        const productsData = await productsRes.json();
-        const ordersData = await ordersRes.json();
-        
-        // Handle both paginated response format { data, pagination } and array format
-        const products = Array.isArray(productsData) ? productsData : (productsData.data || []);
-        const orders = Array.isArray(ordersData) ? ordersData : (ordersData.data || []);
-        
-        const revenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
-        
-        setStats({
-          revenue,
-          orders: orders.length,
-          products: products.length,
-          customers: new Set(orders.map(o => o.email)).size,
-        });
-        
-        setRecentSales(orders.slice(0, 5));
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
+  const { data: kpiData, isLoading } = useQuery({
+    queryKey: ["admin-kpis"],
+    queryFn: async () => {
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      
+      const res = await fetch(`${API_URL}/dashboard/kpis`, { headers });
+      
+      if (res.status === 401) {
+        localStorage.removeItem("admin_token");
+        document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
+        router.replace("/admin/login");
+        throw new Error("Unauthorized");
       }
-    };
 
-    fetchStats();
-  }, [router]);
+      if (!res.ok) {
+        throw new Error("Failed to fetch KPIs");
+      }
+      
+      return res.json();
+    }
+  });
+
+  const revenue = kpiData?.revenue || 0;
+  const totalOrders = kpiData?.totalOrders || 0;
+  const totalProducts = kpiData?.totalProducts || 0;
+  const totalCustomers = kpiData?.totalCustomers || 0;
+  const recentSales = kpiData?.recentOrders || [];
+  const lowStockProducts = kpiData?.lowStockProducts || [];
 
   const statCards = [
     {
       title: "Total Revenue",
-      value: formatPrice(stats.revenue),
+      value: formatPrice(revenue),
       change: "+12.5%",
       positive: true,
       icon: TrendingUp,
     },
     {
       title: "Total Orders",
-      value: stats.orders,
+      value: totalOrders,
       change: "+8.2%",
       positive: true,
       icon: ShoppingCart,
     },
     {
       title: "Active Products",
-      value: stats.products,
+      value: totalProducts,
       change: "0%",
       positive: true,
       icon: Package,
     },
     {
       title: "Active Customers",
-      value: stats.customers,
+      value: totalCustomers,
       change: "+24.1%",
       positive: true,
       icon: Users,
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <Clock className="w-8 h-8 text-zinc-500 animate-spin" />
+        <p className="text-sm text-zinc-500 uppercase tracking-widest">Loading dashboard overview...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -187,23 +172,24 @@ export default function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: "Matsuri Tee - Onyx", stock: 4 },
-                { name: "Tsuki Hoodie - Smoke", stock: 2 },
-                { name: "Ryujin Tee - Bone", stock: 0 },
-              ].map((item) => (
-                <div key={item.name} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05] flex items-center justify-between">
+              {lowStockProducts.map((item) => (
+                <div key={item._id} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05] flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-white">{item.name}</p>
                     <p className={`text-xs ${item.stock === 0 ? 'text-red-500' : 'text-amber-500'}`}>
                       {item.stock === 0 ? 'Out of stock' : `${item.stock} units remaining`}
                     </p>
                   </div>
-                  <button className="text-[10px] font-bold text-white uppercase tracking-widest bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
-                    Restock
-                  </button>
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    SKU: {item.sku || 'N/A'}
+                  </div>
                 </div>
               ))}
+              {lowStockProducts.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-zinc-600 uppercase tracking-widest">All products well-stocked</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

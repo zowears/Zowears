@@ -27,7 +27,7 @@ export default function OrdersPage() {
     queryFn: async () => {
       const token = localStorage.getItem("admin_token");
       const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-      const res = await fetch(`${API_URL}/orders`, { headers });
+      const res = await fetch(`${API_URL}/orders`, { headers, cache: 'no-store' });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       // Handle both paginated response format { data, pagination } and array format

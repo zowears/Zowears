@@ -12,7 +12,8 @@ import {
   Loader2,
   X,
   Upload,
-  Star
+  Star,
+  Check
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -33,7 +34,8 @@ export default function ProductsPage() {
     description: "",
     stock: "0",
     badge: "",
-    jp: ""
+    jp: "",
+    colors: []
   });
 
   const { data: productsData, isLoading } = useQuery({
@@ -41,13 +43,30 @@ export default function ProductsPage() {
     queryFn: async () => {
       const token = localStorage.getItem("admin_token");
       const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-      const res = await fetch(`${API_URL}/products`, { headers });
+      const res = await fetch(`${API_URL}/products`, { headers, cache: 'no-store' });
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       // Handle both paginated response format { data, pagination } and array format
       return Array.isArray(data) ? data : (data.data || []);
     },
   });
+
+  const { data: colorsData } = useQuery({
+    queryKey: ["colors"],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/colors`, { cache: 'no-store' });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data.data || []);
+    },
+  });
+
+  const availableColors = colorsData?.length > 0 ? colorsData : [
+    { _id: "000000000000000000000001", name: "Black", hexCode: "#000000" },
+    { _id: "000000000000000000000002", name: "White", hexCode: "#ffffff" },
+    { _id: "000000000000000000000003", name: "Beige", hexCode: "#f5f5dc" },
+    { _id: "000000000000000000000004", name: "Gray", hexCode: "#808080" }
+  ];
 
   const products = productsData;
 
@@ -60,14 +79,20 @@ export default function ProductsPage() {
         headers,
         body: formData, // FormData handles multipart/form-data automatically
       });
-      if (!res.ok) throw new Error("Failed to create product");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create product");
+      }
       return res.json();
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added successfully");
       setIsModalOpen(false);
-      setNewProduct({ name: "", category: "t-shirts", price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "" });
+      setNewProduct({ name: "", category: "t-shirts", price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
       setImageFiles([]);
     },
   });
@@ -136,6 +161,42 @@ export default function ProductsPage() {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleColorToggle = (colorObj) => {
+    setNewProduct((prev) => {
+      const isSelected = prev.colors?.some(c => c.colorId === colorObj._id);
+      if (isSelected) {
+        return {
+          ...prev,
+          colors: prev.colors.filter(c => c.colorId !== colorObj._id)
+        };
+      } else {
+        return {
+          ...prev,
+          colors: [
+            ...(prev.colors || []), 
+            { colorId: colorObj._id, name: colorObj.name, hexCode: colorObj.hexCode, sizes: [] }
+          ]
+        };
+      }
+    });
+  };
+
+  const handleColorSizeToggle = (colorId, size) => {
+    setNewProduct((prev) => ({
+      ...prev,
+      colors: prev.colors.map(c => {
+        if (c.colorId === colorId) {
+          const hasSize = c.sizes.includes(size);
+          return {
+            ...c,
+            sizes: hasSize ? c.sizes.filter(s => s !== size) : [...c.sizes, size]
+          };
+        }
+        return c;
+      })
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -143,10 +204,11 @@ export default function ProductsPage() {
     formData.append("category", newProduct.category);
     formData.append("price", newProduct.price);
     formData.append("compareAt", newProduct.compareAt || "");
-    formData.append("description", newProduct.description);
-    formData.append("stock", newProduct.stock);
+    formData.append("description", newProduct.description || "");
+    formData.append("stock", newProduct.stock || "0");
     formData.append("badge", newProduct.badge || "");
     formData.append("jp", newProduct.jp || "");
+    formData.append("colors", JSON.stringify(newProduct.colors || []));
     imageFiles.forEach((file) => formData.append("images", file));
     createMutation.mutate(formData);
   };
@@ -222,7 +284,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.category}</span>
+                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.category?.name || product.category}</span>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-white">{formatPrice(product.price)}</p>
@@ -358,7 +420,76 @@ export default function ProductsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Colors and Sizes per Color */}
+              <div className="space-y-4 pt-2 border-t border-zinc-800">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Colors</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableColors.map((color) => {
+                    const isSelected = newProduct.colors?.some(c => c.colorId === color._id);
+                    return (
+                      <button
+                        key={color._id}
+                        type="button"
+                        onClick={() => handleColorToggle(color)}
+                        className={`px-3 py-2 rounded-lg border transition-all flex items-center gap-2 ${
+                          isSelected
+                            ? "border-accent-red bg-accent-red/10 text-white"
+                            : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                        }`}
+                      >
+                        <div
+                          className="w-3.5 h-3.5 rounded-full border border-white/20"
+                          style={{ backgroundColor: color.hexCode }}
+                        />
+                        <span className="text-xs font-medium">{color.name}</span>
+                        {isSelected && (
+                          <Check className="w-3.5 h-3.5 text-accent-red" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {newProduct.colors?.length > 0 && (
+                  <div className="space-y-3 mt-4">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Select Sizes for Each Color</label>
+                    <div className="grid grid-cols-1 gap-3">
+                      {newProduct.colors.map(selectedColor => (
+                        <div key={selectedColor.colorId} className="border border-zinc-800 rounded-lg p-3 bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full border border-white/20" 
+                              style={{ backgroundColor: selectedColor.hexCode }} 
+                            />
+                            <span className="text-sm font-semibold text-white">{selectedColor.name}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {["M", "L", "XL"].map((size) => {
+                              const hasSize = selectedColor.sizes.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => handleColorSizeToggle(selectedColor.colorId, size)}
+                                  className={`px-3 py-1 text-xs rounded-md border transition-all font-medium ${
+                                    hasSize
+                                      ? "border-accent-red bg-accent-red text-white"
+                                      : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-zinc-800">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Images</label>
                   {imageFiles.length > 0 && (

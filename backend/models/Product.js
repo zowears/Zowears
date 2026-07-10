@@ -39,7 +39,8 @@ const productSchema = new mongoose.Schema({
   colors: [{
     colorId: mongoose.Schema.Types.ObjectId,
     name: String,
-    hexCode: String
+    hexCode: String,
+    sizes: [{ type: String }]
   }],
   sizes: [{ type: String }],
   

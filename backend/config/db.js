@@ -1,6 +1,7 @@
 import { connect } from 'mongoose';
 import dotenv from 'dotenv';
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 dotenv.config();
 
 let migrationCompleted = false;
@@ -10,8 +11,22 @@ const connectDB = async () => {
     const conn = await connect(process.env.MONGODB_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     
-    // Only run migration once per process (not on every restart in development)
+    // Only run migration/seeding once per process (not on every restart in development)
     if (!migrationCompleted) {
+      // Seed default categories if none exist
+      const categoryCount = await Category.countDocuments();
+      if (categoryCount === 0) {
+        console.log('[Seed] Seeding default categories...');
+        const defaultCategories = [
+          { name: 'T-shirts', slug: 't-shirts', description: 'Premium T-shirts' },
+          { name: 'Hoodies', slug: 'hoodies', description: 'Heavyweight Hoodies' },
+          { name: 'Sweatshirts', slug: 'sweatshirts', description: 'Premium Sweatshirts' },
+          { name: 'Plain Tees', slug: 'plain-tees', description: 'Plain Tees & Essentials' }
+        ];
+        await Category.insertMany(defaultCategories);
+        console.log('[Seed] Default categories seeded successfully.');
+      }
+
       // One-time self-healing migration to add slugs to existing products lacking one
       const productsWithoutSlugs = await Product.find({ 
         $or: [

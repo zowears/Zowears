@@ -5,6 +5,28 @@ import Category from '../models/Category.js';
 import { upload } from '../config/cloudinary.js';
 import auth from '../middleware/auth.js';
 
+// Helper to resolve category ID from ObjectId, Slug, or Name
+const resolveCategoryId = async (categoryInput) => {
+  if (!categoryInput) return null;
+  
+  // Check if it's a valid ObjectId
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(categoryInput);
+  if (isObjectId) {
+    const categoryDoc = await Category.findById(categoryInput).lean();
+    if (categoryDoc) return categoryDoc._id;
+  }
+  
+  // If not found or not ObjectId, search by slug or name (case-insensitive)
+  const categoryDoc = await Category.findOne({
+    $or: [
+      { slug: categoryInput },
+      { name: new RegExp(`^${categoryInput}$`, 'i') }
+    ]
+  }).lean();
+  
+  return categoryDoc ? categoryDoc._id : null;
+};
+
 // Get all products with pagination and filters
 router.get('/', async (req, res) => {
   try {
@@ -178,9 +200,9 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       });
     }
 
-    // Validate category exists
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
+    // Resolve and validate category
+    const categoryId = await resolveCategoryId(category);
+    if (!categoryId) {
       return res.status(400).json({ message: 'Category not found' });
     }
 
@@ -216,7 +238,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      category,
+      category: categoryId,
       brand,
       status: status || 'active',
       isFeatured: isFeatured === 'true' || isFeatured === true,
@@ -276,7 +298,13 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
     if (name) product.name = name;
     if (sku) product.sku = sku;
     if (description) product.description = description;
-    if (category) product.category = category;
+    if (category) {
+      const categoryId = await resolveCategoryId(category);
+      if (!categoryId) {
+        return res.status(400).json({ message: 'Category not found' });
+      }
+      product.category = categoryId;
+    }
     if (brand) product.brand = brand;
     if (status) product.status = status;
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true' || isFeatured === true;
