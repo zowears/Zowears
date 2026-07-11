@@ -35,10 +35,10 @@ export default function ProductPage() {
     if (p) {
       const defaultColor = p.colors[0]?.name || "Onyx";
       setColor(defaultColor);
-      
+
       const colorObj = p.colors?.find(c => c.name === defaultColor);
       const sizesForColor = (colorObj?.sizes?.length > 0) ? colorObj.sizes : p.sizes;
-      
+
       setSize(sizesForColor?.[1] ?? sizesForColor?.[0]);
     }
   }, [p]);
@@ -72,7 +72,10 @@ export default function ProductPage() {
     );
   }
 
-  const gallery = p.images?.length > 0 ? p.images : [p.image];
+  const gallery = [
+    ...(p.images || []),
+    p.image,
+  ].filter((src) => typeof src === "string" && src.trim() !== "");
   const related = (allProducts || []).filter((x) => x.id !== p.id).slice(0, 4);
 
   return (
@@ -96,15 +99,17 @@ export default function ProductPage() {
             <div className="order-2 col-span-12 md:order-1 md:col-span-2">
               <div className="flex gap-3 md:flex-col">
                 {gallery.map((src, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setImg(i)}
-                    className={`relative aspect-[3/4] flex-1 overflow-hidden bg-surface transition-all md:flex-none ${i === img ? "ring-1 ring-accent-red" : "opacity-60 hover:opacity-100"}`}
-                  >
-                    <div className="relative h-full w-full">
-                      <Image src={src} alt="" fill sizes="100px" className="object-cover" />
-                    </div>
-                  </button>
+                  src ? (
+                    <button
+                      key={i}
+                      onClick={() => setImg(i)}
+                      className={`relative aspect-[3/4] flex-1 overflow-hidden bg-surface transition-all md:flex-none ${i === img ? "ring-1 ring-accent-red" : "opacity-60 hover:opacity-100"}`}
+                    >
+                      <div className="relative h-full w-full">
+                        <Image src={src} alt="" fill sizes="100px" className="object-cover" />
+                      </div>
+                    </button>
+                  ) : null
                 ))}
               </div>
             </div>
@@ -151,7 +156,7 @@ export default function ProductPage() {
             <h1 className="mt-6 font-display text-5xl font-bold tracking-[-0.06em] md:text-7xl">
               {p.name}
             </h1>
-            
+
             <div className="mt-4 flex items-center justify-between border-b border-white/5 pb-8">
               <div className="flex items-baseline gap-4">
                 <span className="font-display text-4xl font-bold tracking-tight">{formatPrice(p.price)}</span>
@@ -178,9 +183,8 @@ export default function ProductPage() {
                     <button
                       key={s}
                       onClick={() => setSize(s)}
-                      className={`flex h-14 min-w-[3.5rem] items-center justify-center border text-[11px] font-bold transition-all ${
-                        size === s ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"
-                      }`}
+                      className={`flex h-14 min-w-[3.5rem] items-center justify-center border text-[11px] font-bold transition-all ${size === s ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"
+                        }`}
                     >
                       {s}
                     </button>
@@ -222,10 +226,10 @@ export default function ProductPage() {
               </div>
               <button
                 className="group relative h-16 flex-1 overflow-hidden bg-foreground text-[11px] font-bold uppercase tracking-[0.4em] text-background transition-all"
-                onClick={() => add({ 
-                  productId: p.id, 
-                  size, 
-                  color, 
+                onClick={() => add({
+                  productId: p.id,
+                  size,
+                  color,
                   qty,
                   name: p.name,
                   price: p.price,
