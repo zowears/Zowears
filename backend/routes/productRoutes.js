@@ -37,8 +37,11 @@ router.get('/', async (req, res) => {
     const query = { status: 'active' };
     
     // Filter by category
-    if (req.query.category) {
-      query.category = req.query.category;
+    if (req.query.mainCategory) {
+      query.mainCategory = req.query.mainCategory;
+    }
+    if (req.query.subCategory) {
+      query.subCategory = req.query.subCategory;
     }
     
     // Filter by price range
@@ -65,7 +68,6 @@ router.get('/', async (req, res) => {
 
     const [products, total] = await Promise.all([
       Product.find(query)
-        .populate('category', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -97,7 +99,6 @@ router.get('/featured', async (req, res) => {
       isFeatured: true, 
       status: 'active' 
     })
-      .populate('category', 'name slug')
       .limit(limit)
       .lean();
     
@@ -155,13 +156,11 @@ router.get('/:idOrSlug', async (req, res) => {
     const isObjectId = req.params.idOrSlug.match(/^[0-9a-fA-F]{24}$/);
     
     if (isObjectId) {
-      product = await Product.findById(req.params.idOrSlug)
-        .populate('category', 'name slug');
+      product = await Product.findById(req.params.idOrSlug);
     }
     
     if (!product) {
-      product = await Product.findOne({ slug: req.params.idOrSlug })
-        .populate('category', 'name slug');
+      product = await Product.findOne({ slug: req.params.idOrSlug });
     }
     
     if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -178,7 +177,8 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      category,
+      mainCategory,
+      subCategory,
       brand,
       status,
       isFeatured,
@@ -190,20 +190,15 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       trackInventory,
       colors,
       sizes,
+      fits,
       jp,
       badge
     } = req.body;
 
-    if (!name || !category || !price) {
+    if (!name || !mainCategory || !price) {
       return res.status(400).json({ 
-        message: 'Name, category, and price are required' 
+        message: 'Name, main category, and price are required' 
       });
-    }
-
-    // Resolve and validate category
-    const categoryId = await resolveCategoryId(category);
-    if (!categoryId) {
-      return res.status(400).json({ message: 'Category not found' });
     }
 
     // Process images
@@ -234,11 +229,21 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       }
     }
 
+    let parsedFits = [];
+    if (fits) {
+      try {
+        parsedFits = typeof fits === 'string' ? JSON.parse(fits) : fits;
+      } catch (e) {
+        parsedFits = Array.isArray(fits) ? fits : [];
+      }
+    }
+
     const product = new Product({
       name,
       sku,
       description,
-      category: categoryId,
+      mainCategory,
+      subCategory,
       brand,
       status: status || 'active',
       isFeatured: isFeatured === 'true' || isFeatured === true,
@@ -250,6 +255,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       trackInventory: trackInventory === 'true' || trackInventory === true,
       colors: parsedColors,
       sizes: parsedSizes,
+      fits: parsedFits,
       images,
       image: primaryImage,
       jp,
@@ -257,7 +263,6 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
     });
 
     const newProduct = await product.save();
-    await newProduct.populate('category', 'name slug');
     
     res.status(201).json(newProduct);
   } catch (error) {
@@ -272,7 +277,8 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      category,
+      mainCategory,
+      subCategory,
       brand,
       status,
       isFeatured,
@@ -284,6 +290,7 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
       trackInventory,
       colors,
       sizes,
+      fits,
       jp,
       badge,
       removeImages
@@ -298,13 +305,8 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
     if (name) product.name = name;
     if (sku) product.sku = sku;
     if (description) product.description = description;
-    if (category) {
-      const categoryId = await resolveCategoryId(category);
-      if (!categoryId) {
-        return res.status(400).json({ message: 'Category not found' });
-      }
-      product.category = categoryId;
-    }
+    if (mainCategory) product.mainCategory = mainCategory;
+    if (subCategory !== undefined) product.subCategory = subCategory;
     if (brand) product.brand = brand;
     if (status) product.status = status;
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true' || isFeatured === true;
@@ -335,6 +337,14 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
         product.sizes = typeof sizes === 'string' ? JSON.parse(sizes) : sizes;
       } catch (e) {
         product.sizes = Array.isArray(sizes) ? sizes : [];
+      }
+    }
+
+    if (fits) {
+      try {
+        product.fits = typeof fits === 'string' ? JSON.parse(fits) : fits;
+      } catch (e) {
+        product.fits = Array.isArray(fits) ? fits : [];
       }
     }
 
@@ -373,7 +383,6 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
     }
 
     const updatedProduct = await product.save();
-    await updatedProduct.populate('category', 'name slug');
 
     res.json(updatedProduct);
   } catch (error) {
@@ -423,7 +432,6 @@ router.get('/admin/low-stock', auth, async (req, res) => {
     const products = await Product.find({
       $expr: { $lte: ['$stock', '$lowStockThreshold'] }
     })
-      .populate('category', 'name')
       .sort({ stock: 1 })
       .lean();
 

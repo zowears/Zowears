@@ -13,10 +13,13 @@ import { useCart } from "@/context/cart";
 
 export default function ProductPage() {
   const params = useParams();
+  const slugArray = params.slug || [];
+  const idOrSlug = slugArray[slugArray.length - 1];
+
   const { data: p, isLoading } = useQuery({
-    queryKey: ["product", params.id],
-    queryFn: () => fetchProduct(params.id),
-    enabled: !!params.id,
+    queryKey: ["product", idOrSlug],
+    queryFn: () => fetchProduct(idOrSlug),
+    enabled: !!idOrSlug,
   });
 
   const { data: allProducts } = useQuery({
@@ -203,7 +206,7 @@ export default function ProductPage() {
                       key={c.name}
                       onClick={() => setColor(c.name)}
                       className={`group relative h-12 w-12 rounded-full border border-white/10 p-1.5 transition-transform hover:scale-110 ${color === c.name ? "ring-1 ring-accent-red" : ""}`}
-                      style={{ background: c.hex }}
+                      style={{ background: c.hexCode }}
                       aria-label={c.name}
                     >
                       <div className={`absolute inset-0 rounded-full border-2 border-white/0 transition-all ${color === c.name ? "border-white/40" : "group-hover:border-white/20"}`} />

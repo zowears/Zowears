@@ -10,6 +10,8 @@ import { formatPrice } from "@/lib/products";
 export function ProductCard({ product, index }) {
   const { add } = useCart();
 
+  const productUrl = `/product${product.mainCategory ? `/${product.mainCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}${product.subCategory ? `/${product.subCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}/${product.slug || product.id}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -19,7 +21,7 @@ export function ProductCard({ product, index }) {
       className="group"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-surface">
-        <Link href={`/product/${product.slug || product.id}`} className="relative block h-full w-full">
+        <Link href={productUrl} className="relative block h-full w-full">
           <Image
             src={product.image}
             alt={product.name}
@@ -50,7 +52,7 @@ export function ProductCard({ product, index }) {
                 name: product.name,
                 price: product.price,
                 image: product.image,
-                category: product.category
+                category: product.mainCategory
               })}
               className="flex-1 flex items-center justify-center gap-3 bg-white py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-black hover:bg-accent-red hover:text-white transition-colors"
             >
@@ -69,7 +71,7 @@ export function ProductCard({ product, index }) {
 
       <div className="mt-6 space-y-2 px-1">
         <div className="flex items-start justify-between gap-4">
-          <Link href={`/product/${product.slug || product.id}`}>
+          <Link href={productUrl}>
             <h3 className="font-display text-lg font-bold tracking-tight text-foreground/90 transition-colors hover:text-accent-red">
               {product.name}
             </h3>
@@ -97,7 +99,7 @@ export function ProductCard({ product, index }) {
             <div
               key={c.name}
               className="h-3 w-3 rounded-full border border-white/10"
-              style={{ background: c.hex }}
+              style={{ background: c.hexCode }}
               title={c.name}
             />
           ))}

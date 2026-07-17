@@ -10,11 +10,22 @@ import { ProductCard } from "@/components/ProductCard";
 
 const sizes = ["M", "L", "XL"];
 
-const cats = [
-  { id: "t-shirts", label: "T-shirts" },
-  { id: "hoodies", label: "Hoodies" },
-  { id: "sweatshirts", label: "Sweatshirts" },
-  { id: "plain-tees", label: "Plain Tees" },
+const mainCats = [
+  { 
+    id: "Men's Wear", 
+    label: "Men's Wear", 
+    subs: [{ id: "T-shirts", label: "T-shirts" }, { id: "Hoodies", label: "Hoodies" }] 
+  },
+  { 
+    id: "Girls Wear", 
+    label: "Girls Wear", 
+    subs: [{ id: "Hoodies", label: "Hoodies" }, { id: "Sweatshirts", label: "Sweatshirts" }] 
+  },
+  { 
+    id: "Plain Tees", 
+    label: "Plain Tees", 
+    subs: [] 
+  },
 ];
 
 function ShopContent() {
@@ -28,25 +39,28 @@ function ShopContent() {
 
   const [grid, setGrid] = React.useState(true);
   const [drawer, setDrawer] = React.useState(false);
-  const [cat, setCat] = React.useState(initialCat);
+  const [mainCat, setMainCat] = React.useState(searchParams.get("main") || undefined);
+  const [subCat, setSubCat] = React.useState(searchParams.get("sub") || undefined);
   const [price, setPrice] = React.useState(5000);
   const [size, setSize] = React.useState([]);
   const [sort, setSort] = React.useState("featured");
 
   React.useEffect(() => {
-    setCat(searchParams.get("c") || undefined);
+    setMainCat(searchParams.get("main") || undefined);
+    setSubCat(searchParams.get("sub") || undefined);
   }, [searchParams]);
 
   const filtered = React.useMemo(() => {
     if (!products) return [];
     let list = [...products];
-    if (cat) list = list.filter((p) => p.category === cat);
+    if (mainCat) list = list.filter((p) => p.mainCategory === mainCat);
+    if (subCat) list = list.filter((p) => p.subCategory === subCat);
     list = list.filter((p) => p.price <= price);
     if (sort === "asc") list.sort((a, b) => a.price - b.price);
     if (sort === "desc") list.sort((a, b) => b.price - a.price);
-    if (sort === "rating") list.sort((a, b) => b.rating - a.rating);
+    if (sort === "rating") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     return list;
-  }, [products, cat, price, sort]);
+  }, [products, mainCat, subCat, price, sort]);
 
   const Filters = (
     <div className="space-y-12">
@@ -58,22 +72,45 @@ function ShopContent() {
         <ul className="space-y-4">
           <li>
             <button
-              onClick={() => setCat(undefined)}
-              className={`group flex w-full items-center justify-between text-sm transition-colors ${!cat ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => { setMainCat(undefined); setSubCat(undefined); }}
+              className={`group flex w-full items-center justify-between text-sm transition-colors ${!mainCat ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
             >
               All silhouettes
-              {!cat && <div className="h-1 w-1 rounded-full bg-accent-red" />}
+              {!mainCat && <div className="h-1 w-1 rounded-full bg-accent-red" />}
             </button>
           </li>
-          {cats.map((x) => (
-            <li key={x.id}>
+          {mainCats.map((mc) => (
+            <li key={mc.id} className="space-y-2">
               <button
-                onClick={() => setCat(x.id)}
-                className={`group flex w-full items-center justify-between text-sm transition-colors ${cat === x.id ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => {
+                  setMainCat(mc.id);
+                  setSubCat(undefined); // Reset subcat when maincat is clicked
+                }}
+                className={`group flex w-full items-center justify-between text-sm transition-colors ${mainCat === mc.id ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {x.label}
-                {cat === x.id && <div className="h-1 w-1 rounded-full bg-accent-red" />}
+                {mc.label}
+                {mainCat === mc.id && !subCat && <div className="h-1 w-1 rounded-full bg-accent-red" />}
               </button>
+              
+              {/* Render Sub Categories if available and Main Category is active */}
+              {mainCat === mc.id && mc.subs.length > 0 && (
+                <ul className="pl-4 space-y-2 mt-2 border-l border-white/10">
+                  {mc.subs.map((sc) => (
+                    <li key={sc.id}>
+                      <button
+                        onClick={() => {
+                          setMainCat(mc.id);
+                          setSubCat(sc.id);
+                        }}
+                        className={`group flex w-full items-center justify-between text-xs transition-colors ${subCat === sc.id ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        {sc.label}
+                        {subCat === sc.id && <div className="h-1 w-1 rounded-full bg-accent-red" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
@@ -113,7 +150,7 @@ function ShopContent() {
           Collective · {filtered.length} items
         </div>
         <h1 className="mt-6 font-display text-6xl font-bold tracking-[-0.06em] md:text-9xl">
-          {cat ? cats.find((x) => x.id === cat)?.label ?? "Shop" : "All products"}
+          {subCat ? subCat : (mainCat ? mainCats.find((x) => x.id === mainCat)?.label : "All products")}
         </h1>
       </motion.div>
 
@@ -179,7 +216,7 @@ function ShopContent() {
           {filtered.length === 0 && (
             <div className="py-32 text-center">
               <div className="font-display text-2xl text-muted-foreground">No matches found for this filter.</div>
-              <button onClick={() => { setCat(undefined); setPrice(5000); }} className="mt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red underline underline-offset-8">Clear all filters</button>
+              <button onClick={() => { setMainCat(undefined); setSubCat(undefined); setPrice(5000); }} className="mt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red underline underline-offset-8">Clear all filters</button>
             </div>
           )}
 

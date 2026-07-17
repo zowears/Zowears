@@ -28,7 +28,9 @@ export default function ProductsPage() {
   const [imageFiles, setImageFiles] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "t-shirts",
+    mainCategory: "",
+    subCategory: "",
+    fits: [],
     price: "",
     compareAt: "",
     description: "",
@@ -92,7 +94,7 @@ export default function ProductsPage() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added successfully");
       setIsModalOpen(false);
-      setNewProduct({ name: "", category: "t-shirts", price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
+      setNewProduct({ name: "", mainCategory: "", subCategory: "", fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
       setImageFiles([]);
     },
   });
@@ -201,7 +203,9 @@ export default function ProductsPage() {
     e.preventDefault();
     const formData = new FormData();
     formData.append("name", newProduct.name);
-    formData.append("category", newProduct.category);
+    formData.append("mainCategory", newProduct.mainCategory);
+    formData.append("subCategory", newProduct.subCategory);
+    formData.append("fits", JSON.stringify(newProduct.fits || []));
     formData.append("price", newProduct.price);
     formData.append("compareAt", newProduct.compareAt || "");
     formData.append("description", newProduct.description || "");
@@ -284,7 +288,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.category?.name || product.category}</span>
+                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.mainCategory}{product.subCategory ? ` / ${product.subCategory}` : ''}</span>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-white">{formatPrice(product.price)}</p>
@@ -360,18 +364,72 @@ export default function ProductsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Category</label>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Main Category</label>
                   <select
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    value={newProduct.mainCategory}
+                    onChange={(e) => setNewProduct({ ...newProduct, mainCategory: e.target.value, subCategory: "", fits: [] })}
+                    required
                   >
-                    <option value="t-shirts">T-shirts</option>
-                    <option value="hoodies">Hoodies</option>
-                    <option value="sweatshirts">Sweatshirts</option>
-                    <option value="plain-tees">Plain Tees</option>
+                    <option value="">Select Main Category</option>
+                    <option value="Men's Wear">Men's Wear</option>
+                    <option value="Girls Wear">Girls Wear</option>
+                    <option value="Plain Tees">Plain Tees</option>
+                    <option value="Designs">Designs</option>
                   </select>
                 </div>
+
+                {(newProduct.mainCategory === "Men's Wear" || newProduct.mainCategory === "Girls Wear") && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sub Category</label>
+                    <select
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                      value={newProduct.subCategory}
+                      onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value, fits: [] })}
+                      required={newProduct.mainCategory !== "Plain Tees" && newProduct.mainCategory !== "Designs"}
+                    >
+                      <option value="">Select Sub Category</option>
+                      {newProduct.mainCategory === "Men's Wear" && (
+                        <>
+                          <option value="T-shirts">T-shirts</option>
+                          <option value="Hoodies">Hoodies</option>
+                        </>
+                      )}
+                      {newProduct.mainCategory === "Girls Wear" && (
+                        <>
+                          <option value="Hoodies">Hoodies</option>
+                          <option value="Sweatshirts">Sweatshirts</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                )}
+
+                {(newProduct.mainCategory === "Plain Tees" || newProduct.subCategory === "T-shirts") && (
+                  <div className="space-y-2 col-span-2 mt-2 p-3 border border-zinc-800 rounded-lg bg-zinc-900/50">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits (T-shirts)</label>
+                    <div className="flex gap-4">
+                      {["Regular Fit", "Oversized"].map(fit => (
+                        <label key={fit} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newProduct.fits?.includes(fit)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewProduct({ ...newProduct, fits: [...(newProduct.fits || []), fit] });
+                              } else {
+                                setNewProduct({ ...newProduct, fits: (newProduct.fits || []).filter(f => f !== fit) });
+                              }
+                            }}
+                            className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
+                          />
+                          <span className="text-sm text-zinc-300">{fit}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Price (Rs.)</label>
                   <input

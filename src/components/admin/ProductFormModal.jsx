@@ -18,7 +18,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
     name: "",
     sku: "",
     description: "",
-    category: "",
+    mainCategory: "",
+    subCategory: "",
+    fits: [],
     brand: "",
     status: "active",
     isFeatured: false,
@@ -47,8 +49,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
         ]);
 
         if (categoriesRes.ok) {
-          const catData = await categoriesRes.json();
-          setCategories(catData.data || []);
+          // categories is no longer used, as we hardcode mainCategories
         }
 
         if (colorsRes.ok) {
@@ -72,7 +73,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
         name: product.name || "",
         sku: product.sku || "",
         description: product.description || "",
-        category: product.category?._id || product.category || "",
+        mainCategory: product.mainCategory || "",
+        subCategory: product.subCategory || "",
+        fits: product.fits || [],
         brand: product.brand || "",
         status: product.status || "active",
         isFeatured: product.isFeatured || false,
@@ -184,7 +187,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
       form.append("name", formData.name);
       form.append("sku", formData.sku);
       form.append("description", formData.description);
-      form.append("category", formData.category);
+      form.append("mainCategory", formData.mainCategory);
+      form.append("subCategory", formData.subCategory);
+      form.append("fits", JSON.stringify(formData.fits));
       form.append("brand", formData.brand);
       form.append("status", formData.status);
       form.append("isFeatured", formData.isFeatured);
@@ -286,20 +291,75 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
                 className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className="col-span-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.mainCategory}
+                onChange={(e) => {
+                  setFormData({ 
+                    ...formData, 
+                    mainCategory: e.target.value,
+                    subCategory: "", // reset subcategory on main change
+                    fits: [] 
+                  })
+                }}
+                className="col-span-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
+                <option value="">Select Main Category</option>
+                <option value="Men's Wear">Men's Wear</option>
+                <option value="Girls Wear">Girls Wear</option>
+                <option value="Plain Tees">Plain Tees</option>
+                <option value="Designs">Designs</option>
               </select>
+
+              {(formData.mainCategory === "Men's Wear" || formData.mainCategory === "Girls Wear") && (
+                <select
+                  value={formData.subCategory}
+                  onChange={(e) =>
+                    setFormData({ ...formData, subCategory: e.target.value, fits: [] })
+                  }
+                  className="col-span-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={formData.mainCategory !== "Plain Tees" && formData.mainCategory !== "Designs"}
+                >
+                  <option value="">Select Sub Category</option>
+                  {formData.mainCategory === "Men's Wear" && (
+                    <>
+                      <option value="T-shirts">T-shirts</option>
+                      <option value="Hoodies">Hoodies</option>
+                    </>
+                  )}
+                  {formData.mainCategory === "Girls Wear" && (
+                    <>
+                      <option value="Hoodies">Hoodies</option>
+                      <option value="Sweatshirts">Sweatshirts</option>
+                    </>
+                  )}
+                </select>
+              )}
+
+              {/* Fit options for T-shirts */}
+              {(formData.mainCategory === "Plain Tees" || formData.subCategory === "T-shirts") && (
+                <div className="col-span-2 space-y-2 mt-2 border p-3 rounded-lg bg-gray-50">
+                  <label className="text-sm font-medium text-gray-700">Available Fits (T-shirts)</label>
+                  <div className="flex gap-4">
+                    {["Regular Fit", "Oversized"].map(fit => (
+                      <label key={fit} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.fits.includes(fit)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, fits: [...formData.fits, fit] });
+                            } else {
+                              setFormData({ ...formData, fits: formData.fits.filter(f => f !== fit) });
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">{fit}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <textarea
                 placeholder="Description"
                 value={formData.description}
