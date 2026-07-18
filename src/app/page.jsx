@@ -14,7 +14,7 @@ export default function Home() {
       <Categories />
       {/* <Trending /> */}
       <Story />
-      <Countdown />
+      {/* <Countdown /> */}
       {/* <Reviews /> */}
       <Gallery />
       <Newsletter />

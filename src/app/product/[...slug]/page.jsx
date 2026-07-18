@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Truck, Shield, RefreshCw, Minus, Plus, ChevronDown, Share2, Info, ShoppingBag, Loader2 } from "lucide-react";
+import { Heart, Truck, Shield, RefreshCw, Minus, Plus, ChevronDown, ChevronLeft, ChevronRight, Share2, Info, ShoppingBag, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProduct, fetchProducts, formatPrice } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
@@ -32,7 +32,26 @@ export default function ProductPage() {
   const [qty, setQty] = React.useState(1);
   const [img, setImg] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState(0);
+  const [mousePos, setMousePos] = React.useState({ x: "50%", y: "50%" });
   const { add } = useCart();
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setMousePos({ x: `${x}%`, y: `${y}%` });
+  };
+
+  const viewTracked = React.useRef(false);
+
+  React.useEffect(() => {
+    if (p && !viewTracked.current) {
+      viewTracked.current = true;
+      fetch(`http://localhost:5000/api/analytics/product/${p.id}`, {
+        method: "POST"
+      }).catch(console.error);
+    }
+  }, [p]);
 
   React.useEffect(() => {
     if (p) {
@@ -75,10 +94,11 @@ export default function ProductPage() {
     );
   }
 
-  const gallery = [
-    ...(p.images || []),
+  const rawGallery = [
+    ...(p.images?.map(image => typeof image === "string" ? image : image.url) || []),
     p.image,
   ].filter((src) => typeof src === "string" && src.trim() !== "");
+  const gallery = Array.from(new Set(rawGallery));
   const related = (allProducts || []).filter((x) => x.id !== p.id).slice(0, 4);
 
   return (
@@ -89,17 +109,13 @@ export default function ProductPage() {
           <span className="text-white/10">/</span>
           <span className="text-foreground">{p.name}</span>
         </div>
-        <button className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground hover:text-foreground">
-          <Share2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-          Share
-        </button>
       </div>
 
       <div className="grid gap-16 md:grid-cols-12">
         {/* Left: Gallery */}
         <div className="md:col-span-7">
           <div className="grid grid-cols-12 gap-4">
-            <div className="order-2 col-span-12 md:order-1 md:col-span-2">
+            <div className="hidden md:block md:order-1 md:col-span-2">
               <div className="flex gap-3 md:flex-col">
                 {gallery.map((src, i) => (
                   src ? (
@@ -116,23 +132,51 @@ export default function ProductPage() {
                 ))}
               </div>
             </div>
-            <div className="order-1 col-span-12 md:order-2 md:col-span-10">
+            <div className="order-1 col-span-12 md:order-2 md:col-span-10 relative">
               <motion.div
                 key={img}
                 initial={{ opacity: 0, scale: 1.02 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 className="group relative aspect-[3/4] overflow-hidden bg-surface cursor-zoom-in"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={() => setMousePos({ x: "50%", y: "50%" })}
               >
                 <Image
                   src={gallery[img]}
                   alt={p.name}
                   fill
                   priority
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  quality={100}
+                  unoptimized={true}
+                  className="object-cover transition-transform duration-150 ease-out group-hover:scale-250"
+                  style={{ transformOrigin: `${mousePos.x} ${mousePos.y}` }}
                 />
               </motion.div>
+              
+              {gallery.length > 1 && (
+                <>
+                  <button 
+                    className="md:hidden absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-all hover:bg-black/60"
+                    onClick={() => setImg((prev) => (prev - 1 + gallery.length) % gallery.length)}
+                    aria-label="Previous Image"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button 
+                    className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full backdrop-blur-sm transition-all hover:bg-black/60"
+                    onClick={() => setImg((prev) => (prev + 1) % gallery.length)}
+                    aria-label="Next Image"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                  <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    {gallery.map((_, i) => (
+                      <div key={i} className={`h-1.5 rounded-full transition-all ${i === img ? "bg-white w-4" : "bg-white/50 w-1.5"}`} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -146,14 +190,7 @@ export default function ProductPage() {
                   {p.badge}
                 </span>
               )}
-              <div className="flex items-center gap-1.5">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className={`h-3 w-3 ${i < Math.floor(p.rating) ? "text-accent-red fill-accent-red" : "text-white/10 fill-white/10"}`}>★</span>
-                  ))}
-                </div>
-                <span className="text-[10px] font-bold tracking-[0.2em] opacity-40">{p.reviews} Reviews</span>
-              </div>
+
             </div>
 
             <h1 className="mt-6 font-display text-5xl font-bold tracking-[-0.06em] md:text-7xl">
@@ -167,7 +204,6 @@ export default function ProductPage() {
                   <span className="text-xl text-muted-foreground line-through opacity-40">{formatPrice(p.compareAt)}</span>
                 )}
               </div>
-              <div className="font-serif-jp text-2xl text-white/5 select-none">{p.jp}</div>
             </div>
 
             <p className="mt-8 text-sm leading-relaxed text-muted-foreground md:text-lg">

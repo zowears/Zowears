@@ -60,6 +60,7 @@ const productSchema = new mongoose.Schema({
   badge: { type: String },
   
   // Analytics
+  views: { type: Number, default: 0 },
   totalSold: { type: Number, default: 0 },
   totalRevenue: { type: Number, default: 0 },
   

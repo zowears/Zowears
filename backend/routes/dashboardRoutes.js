@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Visit from '../models/Visit.js';
 import auth from '../middleware/auth.js';
 
 const router = Router();
@@ -20,7 +21,8 @@ router.get('/kpis', auth, async (req, res) => {
       lowStockProducts,
       recentOrders,
       orderStats,
-      monthlyRevenue
+      monthlyRevenue,
+      totalVisitors
     ] = await Promise.all([
       // Total Revenue - Only from delivered/completed orders
       Order.aggregate([
@@ -88,7 +90,10 @@ router.get('/kpis', auth, async (req, res) => {
             total: { $sum: '$totalAmount' }
           }
         }
-      ])
+      ]),
+      
+      // Total Visitors
+      Visit.countDocuments()
     ]);
 
     const revenue = totalRevenue.length > 0 ? totalRevenue[0].total : 0;
@@ -123,7 +128,8 @@ router.get('/kpis', auth, async (req, res) => {
         averageOrderValue: totalOrders > 0 ? revenue / totalOrders : 0,
         customerCount: totalCustomers,
         productCount: totalProducts,
-        lowStockCount: lowStockProducts.length
+        lowStockCount: lowStockProducts.length,
+        totalVisitors: totalVisitors
       }
     });
   } catch (error) {
@@ -267,6 +273,23 @@ router.get('/charts/categories', auth, async (req, res) => {
     ]);
 
     res.json(categoryPerformance);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get top viewed products
+router.get('/charts/top-viewed-products', auth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const topViewed = await Product.find({ views: { $gt: 0 } })
+      .sort({ views: -1 })
+      .limit(limit)
+      .select('name views image price')
+      .lean();
+
+    res.json(topViewed);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

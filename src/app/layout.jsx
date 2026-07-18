@@ -5,6 +5,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "sonner";
 import { JsonLd } from "@/components/SEO/JsonLd";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import "./globals.css";
 
 export const metadata = {
@@ -102,6 +103,7 @@ export default function RootLayout({ children }) {
           <Footer />
           <CartDrawer />
           <Toaster position="bottom-right" theme="dark" />
+          <AnalyticsTracker />
         </Providers>
       </body>
     </html>

@@ -9,7 +9,9 @@ import {
   Users,
   ArrowUpRight,
   ArrowDownRight,
-  Clock
+  Clock,
+  Globe,
+  Eye
 } from "lucide-react";
 import { 
   Card, 
@@ -48,10 +50,21 @@ export default function AdminOverview() {
     }
   });
 
+  const { data: topViewedData } = useQuery({
+    queryKey: ["top-viewed-products"],
+    queryFn: async () => {
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/dashboard/charts/top-viewed-products`, { headers });
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
   const revenue = kpiData?.revenue || 0;
   const totalOrders = kpiData?.totalOrders || 0;
   const totalProducts = kpiData?.totalProducts || 0;
-  const totalCustomers = kpiData?.totalCustomers || 0;
+  const totalVisitors = kpiData?.topStats?.totalVisitors || 0;
   const recentSales = kpiData?.recentOrders || [];
   const lowStockProducts = kpiData?.lowStockProducts || [];
 
@@ -78,11 +91,11 @@ export default function AdminOverview() {
       icon: Package,
     },
     {
-      title: "Active Customers",
-      value: totalCustomers,
-      change: "+24.1%",
+      title: "Unique Visitors",
+      value: totalVisitors,
+      change: "Tracking live",
       positive: true,
-      icon: Users,
+      icon: Globe,
     },
   ];
 
@@ -188,6 +201,47 @@ export default function AdminOverview() {
               {lowStockProducts.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-sm text-zinc-600 uppercase tracking-widest">All products well-stocked</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-3 bg-[#0a0a0a] border-[#1a1a1a] mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white flex items-center gap-2"><Eye className="w-5 h-5 text-zinc-400" /> Top Viewed Products</CardTitle>
+                <CardDescription className="text-zinc-500">Most clicked and visited items by your users.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topViewedData?.map((item, index) => (
+                <div key={item._id} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4 group hover:bg-white/[0.04] transition-colors">
+                  <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 overflow-hidden relative">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-5 h-5 text-zinc-600" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{item.name}</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">
+                      {formatPrice(item.price)}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+                    <p className="text-xs font-bold text-accent-red">{item.views}</p>
+                    <p className="text-[9px] text-zinc-500 uppercase tracking-widest">Views</p>
+                  </div>
+                </div>
+              ))}
+              {(!topViewedData || topViewedData.length === 0) && (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-sm text-zinc-600 uppercase tracking-widest">No product views recorded yet</p>
                 </div>
               )}
             </div>
