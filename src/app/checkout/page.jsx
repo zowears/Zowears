@@ -74,11 +74,13 @@ export default function CheckoutPage() {
 
   // Shipping & Payment Selections
   const [shippingMethod, setShippingMethod] = React.useState("Standard");
-  const [paymentMethod, setPaymentMethod] = React.useState("Credit Card");
+  const [paymentMethod, setPaymentMethod] = React.useState("Cash on delivery");
 
   // Dynamic Shipping Cost
-  const standardShippingCost = subtotal > 2499 ? 0 : 199;
-  const shippingCost = shippingMethod === "Express" ? 299 : standardShippingCost;
+  const isKarachi = formData.city.trim().toLowerCase() === "karachi";
+  const standardShippingCost = subtotal > 5000 ? 0 : 100;
+  const expressShippingCost = subtotal > 5000 ? 0 : 200;
+  const shippingCost = shippingMethod === "Express" && isKarachi ? expressShippingCost : standardShippingCost;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -639,7 +641,7 @@ export default function CheckoutPage() {
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                 {[
                   { n: "Standard Shipping", d: "3–5 business days", p: standardShippingCost },
-                  { n: "Express Shipping", d: "1–2 business days", p: 299 }
+                  ...(isKarachi ? [{ n: "Express Shipping", d: "72 hours delivery", p: expressShippingCost }] : [])
                 ].map((o) => (
                   <label key={o.n} className="flex cursor-pointer items-center justify-between border border-white/5 bg-white/5 p-6 transition-all hover:border-white/20 has-[:checked]:border-accent-red">
                     <div className="flex items-center gap-4">
@@ -666,7 +668,7 @@ export default function CheckoutPage() {
             {/* Step 2: Payment Choices */}
             {step === 2 && (
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                {["Credit Card", "UPI / Digital Wallet", "Cash on delivery"].map((m, i) => (
+                {["Cash on delivery"].map((m, i) => (
                   <label key={m} className="flex cursor-pointer items-center gap-4 border border-white/5 bg-white/5 p-6 transition-all hover:border-white/20 has-[:checked]:border-accent-red">
                     <input 
                       type="radio" 

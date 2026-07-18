@@ -295,4 +295,40 @@ router.get('/charts/top-viewed-products', auth, async (req, res) => {
   }
 });
 
+// Get all unique customers for the customer sheet
+router.get('/customers', auth, async (req, res) => {
+  try {
+    const customers = await Order.aggregate([
+      {
+        $group: {
+          _id: "$email",
+          name: { $first: "$customerName" },
+          phone: { $first: "$shippingAddress.phone" },
+          city: { $first: "$shippingAddress.city" },
+          totalSpent: { $sum: "$totalAmount" },
+          orderCount: { $sum: 1 },
+          lastOrderDate: { $max: "$createdAt" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          email: "$_id",
+          name: 1,
+          phone: 1,
+          city: 1,
+          totalSpent: 1,
+          orderCount: 1,
+          lastOrderDate: 1
+        }
+      },
+      { $sort: { lastOrderDate: -1 } }
+    ]);
+    
+    res.json(customers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

@@ -61,6 +61,7 @@ export default function AdminLayout({ children }) {
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/admin" },
+    { name: "Customers", icon: User, href: "/admin/customers" },
     { name: "Products", icon: Package, href: "/admin/products" },
     { name: "Designs", icon: Scissors, href: "/admin/designs" },
     { name: "Orders", icon: ShoppingCart, href: "/admin/orders" },
