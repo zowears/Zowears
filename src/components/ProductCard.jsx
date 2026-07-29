@@ -86,15 +86,15 @@ export function ProductCard({ product, index }) {
           </div>
         </div>
         
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <div className="font-serif-jp text-xs text-muted-foreground/60">{product.jp}</div>
           <div className="flex items-center gap-1.5">
             <Star className="h-3 w-3 fill-accent-red text-accent-red" />
             <span className="text-[10px] font-bold text-foreground/80">{product.rating}</span>
           </div>
-        </div>
+        </div> */}
 
-        <div className="pt-2 flex gap-1.5">
+        {/* <div className="pt-2 flex gap-1.5">
           {product.colors.map((c) => (
             <div
               key={c.name}
@@ -103,7 +103,7 @@ export function ProductCard({ product, index }) {
               title={c.name}
             />
           ))}
-        </div>
+        </div> */}
       </div>
     </motion.div>
   );

@@ -15,7 +15,6 @@ export async function fetchProducts(page = 1, limit = 100) {
       id: p._id || p.id,
       jp: p.jp || "新作",
       rating: p.rating || 5.0,
-      reviews: p.reviews || 0,
       colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
       sizes: p.sizes || ["S", "M", "L", "XL"],
     }));
@@ -35,7 +34,6 @@ export async function fetchProduct(id) {
       id: p._id || p.id,
       jp: p.jp || "新作",
       rating: p.rating || 5.0,
-      reviews: p.reviews || 0,
       colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
       sizes: p.sizes || ["S", "M", "L", "XL"],
     };

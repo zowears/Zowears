@@ -36,8 +36,8 @@ export function Newsletter() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground mb-4 block">Email address</label>
                   <input
                     type="email"
-                    placeholder="SILHOUETTE@ZOWEARS.JP"
-                    className="w-full border-b border-white/10 bg-transparent py-4 font-display text-2xl font-bold uppercase tracking-tighter outline-none transition-colors focus:border-accent-red"
+                    placeholder="abcd@gmail.com"
+                    className="w-full border-b border-white/10 bg-transparent py-4 font-display text-2xl font-bold tracking-tighter outline-none transition-colors focus:border-accent-red"
                   />
                 </div>
                 <button className="group relative flex items-center justify-center gap-4 bg-foreground px-12 py-5 text-[11px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-white">

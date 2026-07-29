@@ -12,7 +12,7 @@ export function CartProvider({ children }) {
   const add = React.useCallback((item) => {
     setItems((prev) => {
       const idx = prev.findIndex(
-        (i) => i.productId === item.productId && i.size === item.size && i.color === item.color,
+        (i) => i.productId === item.productId && i.size === item.size && i.color === item.color && i.fit === item.fit,
       );
       if (idx >= 0) {
         const next = [...prev];
@@ -39,8 +39,8 @@ export function CartProvider({ children }) {
 
   const count = items.reduce((a, b) => a + b.qty, 0);
   const subtotal = items.reduce((a, b) => {
-    const p = resolve(b);
-    return a + (p && p.price ? p.price * b.qty : 0);
+    const itemPrice = b.price !== undefined ? b.price : (resolve(b)?.price || 0);
+    return a + (itemPrice * b.qty);
   }, 0);
 
   return (

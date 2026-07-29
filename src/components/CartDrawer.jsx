@@ -76,10 +76,10 @@ export function CartDrawer() {
                           <div>
                             <div className="flex items-start justify-between">
                               <h3 className="font-display text-lg font-bold tracking-tight leading-tight">{p.name}</h3>
-                              <div className="text-sm font-bold">{formatPrice(p.price)}</div>
+                              <div className="text-sm font-bold">{formatPrice(it.price || p.price)}</div>
                             </div>
                             <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-                              {it.size} · {it.color}
+                              {it.fit ? `${it.fit} · ` : ''}{it.size} · {it.color}
                             </div>
                           </div>
                           

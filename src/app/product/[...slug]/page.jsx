@@ -29,6 +29,7 @@ export default function ProductPage() {
 
   const [size, setSize] = React.useState("");
   const [color, setColor] = React.useState("");
+  const [fit, setFit] = React.useState("");
   const [qty, setQty] = React.useState(1);
   const [img, setImg] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState(0);
@@ -52,6 +53,28 @@ export default function ProductPage() {
       }).catch(console.error);
     }
   }, [p]);
+
+  const availableFits = (p?.fits?.length > 0)
+    ? p.fits
+    : (p?.mainCategory === "Men's Wear" || p?.mainCategory === "Plain Tees" || p?.subCategory === "T-shirts" || p?.mainCategory?.toLowerCase().includes("men")
+      ? ["Regular Fit", "Drop Shoulder", "Oversized"]
+      : []);
+
+  React.useEffect(() => {
+    if (availableFits.length > 0 && (!fit || !availableFits.includes(fit))) {
+      setFit(availableFits[0]);
+    }
+  }, [p, availableFits, fit]);
+
+  const checkExtraPrice = (f) => {
+    if (!f) return false;
+    const lower = f.toLowerCase();
+    return lower.includes("drop") || lower.includes("shoulder") || lower.includes("oversized") || lower.includes("oversize") || !lower.includes("regular");
+  };
+
+  const isExtraPriceFit = checkExtraPrice(fit);
+  const effectivePrice = p ? (isExtraPriceFit ? p.price + 200 : p.price) : 0;
+  const effectiveCompareAt = p?.compareAt ? (isExtraPriceFit ? p.compareAt + 200 : p.compareAt) : null;
 
   React.useEffect(() => {
     if (p) {
@@ -199,9 +222,9 @@ export default function ProductPage() {
 
             <div className="mt-4 flex items-center justify-between border-b border-white/5 pb-8">
               <div className="flex items-baseline gap-4">
-                <span className="font-display text-4xl font-bold tracking-tight">{formatPrice(p.price)}</span>
-                {p.compareAt && (
-                  <span className="text-xl text-muted-foreground line-through opacity-40">{formatPrice(p.compareAt)}</span>
+                <span className="font-display text-4xl font-bold tracking-tight">{formatPrice(effectivePrice)}</span>
+                {effectiveCompareAt && (
+                  <span className="text-xl text-muted-foreground line-through opacity-40">{formatPrice(effectiveCompareAt)}</span>
                 )}
               </div>
             </div>
@@ -212,6 +235,34 @@ export default function ProductPage() {
 
             {/* Selectors */}
             <div className="mt-12 space-y-10">
+              {availableFits.length > 0 && (
+                <div>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Style / Fit</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">{fit} {isExtraPriceFit ? "(+Rs. 200)" : ""}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {availableFits.map((f) => {
+                      const hasExtraPrice = checkExtraPrice(f);
+                      return (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setFit(f)}
+                          className={`flex h-14 px-6 items-center justify-center border text-[11px] font-bold transition-all ${
+                            fit === f 
+                              ? "border-accent-red bg-accent-red text-white" 
+                              : "border-white/5 text-zinc-300 hover:border-white/20"
+                          }`}
+                        >
+                          {f} {hasExtraPrice ? " (+Rs. 200)" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="mb-6 flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Select Silhouette</span>
@@ -269,16 +320,17 @@ export default function ProductPage() {
                   productId: p.id,
                   size,
                   color,
+                  fit,
                   qty,
                   name: p.name,
-                  price: p.price,
+                  price: effectivePrice,
                   image: p.images?.[0] || p.image,
                   category: p.category
                 })}
               >
                 <span className="relative z-10 flex items-center justify-center gap-3">
                   <ShoppingBag className="h-4 w-4" />
-                  Add to silhouette
+                  Add to cart
                 </span>
                 <div className="absolute inset-0 -translate-x-full bg-accent-red transition-transform duration-500 group-hover:translate-x-0" />
               </button>
@@ -290,7 +342,6 @@ export default function ProductPage() {
             {/* Trust Badges */}
             <div className="mt-12 grid grid-cols-3 gap-4 border-y border-white/5 py-8 text-center">
               <InfoItem icon={<Truck className="h-4 w-4" />} title="Fast Delivery" subtitle="3–5 Days" />
-              <InfoItem icon={<RefreshCw className="h-4 w-4" />} title="Returns" subtitle="7 Days" />
               <InfoItem icon={<Shield className="h-4 w-4" />} title="Genuine" subtitle="Artisan Craft" />
             </div>
 
@@ -303,9 +354,9 @@ export default function ProductPage() {
             {/* Accordions */}
             <div className="mt-12 divide-y divide-white/5 border-b border-white/5">
               {[
-                { q: "Silhouette Details", a: "True oversized drop. Order your usual size for an oversized look, size down for relaxed. Our fabrics are custom-knit for a substantial feel and structural drape." },
                 { q: "Care Instructions", a: "Cold wash, inside out. Do not tumble dry the embroidered pieces. Iron low if needed." },
                 { q: "Collective Promise", a: "Every piece is a numbered part of the Zowears Collective. We ensure ethical manufacturing and artisanal finishing." },
+                { q: "Silhouette Details", a: "True oversized drop. Order your usual size for an oversized look, size down for relaxed. Our fabrics are custom-knit for a substantial feel and structural drape." },
               ].map((f, i) => (
                 <div key={i}>
                   <button

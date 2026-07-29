@@ -144,6 +144,7 @@ export default function CheckoutPage() {
             image: p?.image || ""
           };
         }),
+        subtotal: subtotal,
         totalAmount: subtotal + shippingCost,
         shippingAddress: {
           firstName: formData.firstName,

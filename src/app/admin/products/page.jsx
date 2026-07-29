@@ -25,7 +25,11 @@ export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [removeImages, setRemoveImages] = useState([]);
+
   const [newProduct, setNewProduct] = useState({
     name: "",
     mainCategory: "",
@@ -48,7 +52,6 @@ export default function ProductsPage() {
       const res = await fetch(`${API_URL}/products`, { headers, cache: 'no-store' });
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
-      // Handle both paginated response format { data, pagination } and array format
       return Array.isArray(data) ? data : (data.data || []);
     },
   });
@@ -72,6 +75,58 @@ export default function ProductsPage() {
 
   const products = productsData;
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingProduct(null);
+    setNewProduct({
+      name: "",
+      mainCategory: "",
+      subCategory: "",
+      fits: [],
+      price: "",
+      compareAt: "",
+      description: "",
+      stock: "0",
+      badge: "",
+      jp: "",
+      colors: []
+    });
+    setImageFiles([]);
+    setExistingImages([]);
+    setRemoveImages([]);
+  };
+
+  const handleEditClick = (product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name || "",
+      mainCategory: product.mainCategory || "",
+      subCategory: product.subCategory || "",
+      fits: product.fits || [],
+      price: product.price !== undefined ? String(product.price) : "",
+      compareAt: product.compareAt || product.comparePrice ? String(product.compareAt || product.comparePrice) : "",
+      description: product.description || "",
+      stock: product.stock !== undefined ? String(product.stock) : "0",
+      badge: product.badge || "",
+      jp: product.jp || "",
+      colors: product.colors?.map(c => ({
+        colorId: c.colorId || c._id || "",
+        name: c.name || "",
+        hexCode: c.hexCode || "",
+        sizes: c.sizes || []
+      })) || []
+    });
+
+    const imgs = (product.images && product.images.length > 0)
+      ? product.images.map(img => typeof img === "string" ? img : img.url)
+      : (product.image ? [product.image] : []);
+    
+    setExistingImages(imgs);
+    setRemoveImages([]);
+    setImageFiles([]);
+    setIsModalOpen(true);
+  };
+
   const createMutation = useMutation({
     mutationFn: async (formData) => {
       const token = localStorage.getItem("admin_token");
@@ -79,7 +134,7 @@ export default function ProductsPage() {
       const res = await fetch(`${API_URL}/products`, {
         method: "POST",
         headers,
-        body: formData, // FormData handles multipart/form-data automatically
+        body: formData,
       });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -93,9 +148,32 @@ export default function ProductsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product added successfully");
-      setIsModalOpen(false);
-      setNewProduct({ name: "", mainCategory: "", subCategory: "", fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
-      setImageFiles([]);
+      closeModal();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, formData }) => {
+      const token = localStorage.getItem("admin_token");
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/products/${id}`, {
+        method: "PATCH",
+        headers,
+        body: formData,
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update product");
+      }
+      return res.json();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product updated successfully");
+      closeModal();
     },
   });
 
@@ -146,7 +224,6 @@ export default function ProductsPage() {
     const newFiles = Array.from(e.target.files);
     setImageFiles((prev) => {
       const combined = [...prev, ...newFiles];
-      // deduplicate by name+size
       const seen = new Set();
       return combined.filter((f) => {
         const key = `${f.name}-${f.size}`;
@@ -155,12 +232,16 @@ export default function ProductsPage() {
         return true;
       });
     });
-    // reset input so same file can be re-added after removal
     e.target.value = "";
   };
 
-  const removeImage = (index) => {
+  const removeNewImage = (index) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (url) => {
+    setExistingImages((prev) => prev.filter((imgUrl) => imgUrl !== url));
+    setRemoveImages((prev) => [...prev, url]);
   };
 
   const handleColorToggle = (colorObj) => {
@@ -208,14 +289,26 @@ export default function ProductsPage() {
     formData.append("fits", JSON.stringify(newProduct.fits || []));
     formData.append("price", newProduct.price);
     formData.append("compareAt", newProduct.compareAt || "");
+    formData.append("comparePrice", newProduct.compareAt || "");
     formData.append("description", newProduct.description || "");
     formData.append("stock", newProduct.stock || "0");
     formData.append("badge", newProduct.badge || "");
     formData.append("jp", newProduct.jp || "");
     formData.append("colors", JSON.stringify(newProduct.colors || []));
+    
     imageFiles.forEach((file) => formData.append("images", file));
-    createMutation.mutate(formData);
+    if (removeImages.length > 0) {
+      formData.append("removeImages", JSON.stringify(removeImages));
+    }
+
+    if (editingProduct) {
+      updateMutation.mutate({ id: editingProduct._id, formData });
+    } else {
+      createMutation.mutate(formData);
+    }
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -231,7 +324,14 @@ export default function ProductsPage() {
           />
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingProduct(null);
+            setNewProduct({ name: "", mainCategory: "", subCategory: "", fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
+            setImageFiles([]);
+            setExistingImages([]);
+            setRemoveImages([]);
+            setIsModalOpen(true);
+          }}
           className="flex items-center justify-center gap-2 bg-white text-black px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -272,18 +372,29 @@ export default function ProductsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden relative">
-                          {product.image && (
+                          {(product.image || product.images?.[0]?.url || product.images?.[0]) ? (
                             <Image 
-                              src={product.image || "/placeholder.png"} 
+                              src={product.image || (typeof product.images?.[0] === 'string' ? product.images[0] : product.images?.[0]?.url) || "/placeholder.png"} 
                               alt={product.name}
                               fill
                               className="object-cover"
                             />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">No img</div>
                           )}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{product.name}</p>
                           <p className="text-[10px] text-zinc-500 font-mono">{product._id}</p>
+                          {product.fits?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {product.fits.map(fit => (
+                                <span key={fit} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700">
+                                  {fit}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -302,7 +413,11 @@ export default function ProductsPage() {
                         >
                           <Star className={`w-4 h-4 ${product.isFeatured ? 'fill-current' : ''}`} />
                         </button>
-                        <button className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-all">
+                        <button 
+                          onClick={() => handleEditClick(product)}
+                          className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+                          title="Edit Product"
+                        >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
@@ -312,6 +427,7 @@ export default function ProductsPage() {
                             }
                           }}
                           className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                          title="Delete Product"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -325,21 +441,23 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Add Product Modal */}
+      {/* Product Form Modal (Create or Edit) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeModal}></div>
           <div className="relative bg-[#0a0a0a] border border-zinc-800 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <h2 className="text-xl font-bold text-white tracking-tight">Add New Product</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                {editingProduct ? "Edit Product" : "Add New Product"}
+              </h2>
+              <button onClick={closeModal} className="text-zinc-500 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Name</label>
                   <input
                     required
@@ -348,16 +466,6 @@ export default function ProductsPage() {
                     placeholder="e.g. Kyoto Oversized Tee"
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Japanese Text (Aesthetic)</label>
-                  <input
-                    type="text"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="e.g. 新作"
-                    value={newProduct.jp}
-                    onChange={(e) => setNewProduct({ ...newProduct, jp: e.target.value })}
                   />
                 </div>
               </div>
@@ -405,11 +513,15 @@ export default function ProductsPage() {
                   </div>
                 )}
 
-                {(newProduct.mainCategory === "Plain Tees" || newProduct.subCategory === "T-shirts") && (
+                {/* Available Fits / Sub Category Options */}
+                {(newProduct.mainCategory === "Plain Tees" || newProduct.subCategory === "T-shirts" || newProduct.mainCategory === "Men's Wear" || newProduct.fits?.length > 0) && (
                   <div className="space-y-2 col-span-2 mt-2 p-3 border border-zinc-800 rounded-lg bg-zinc-900/50">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits (T-shirts)</label>
-                    <div className="flex gap-4">
-                      {["Regular Fit", "Oversized"].map(fit => (
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits / Styles</label>
+                      <span className="text-[9px] text-zinc-500">Selecting Drop Shoulder adds +Rs. 200</span>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      {["Regular Fit", "Drop Shoulder", "Oversized"].map(fit => (
                         <label key={fit} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -441,9 +553,7 @@ export default function ProductsPage() {
                     onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Compare At Price (Rs.)</label>
                   <input
@@ -454,6 +564,9 @@ export default function ProductsPage() {
                     onChange={(e) => setNewProduct({ ...newProduct, compareAt: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Stock Qty</label>
                   <input
@@ -465,17 +578,16 @@ export default function ProductsPage() {
                     onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Badge</label>
-                <input
-                  type="text"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                  placeholder="e.g. Limited Edition, Sale"
-                  value={newProduct.badge}
-                  onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
-                />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Badge</label>
+                  <input
+                    type="text"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    placeholder="e.g. Limited Edition, Sale"
+                    value={newProduct.badge}
+                    onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
+                  />
+                </div>
               </div>
 
               {/* Colors and Sizes per Color */}
@@ -522,8 +634,8 @@ export default function ProductsPage() {
                             <span className="text-sm font-semibold text-white">{selectedColor.name}</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {["M", "L", "XL"].map((size) => {
-                              const hasSize = selectedColor.sizes.includes(size);
+                            {["S", "M", "L", "XL", "XXL"].map((size) => {
+                              const hasSize = selectedColor.sizes?.includes(size);
                               return (
                                 <button
                                   key={size}
@@ -547,15 +659,43 @@ export default function ProductsPage() {
                 )}
               </div>
 
+              {/* Images */}
               <div className="space-y-2 pt-2 border-t border-zinc-800">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Images</label>
-                  {imageFiles.length > 0 && (
-                    <span className="text-[10px] text-zinc-500">{imageFiles.length} selected</span>
+                  {(existingImages.length > 0 || imageFiles.length > 0) && (
+                    <span className="text-[10px] text-zinc-500">{existingImages.length + imageFiles.length} total image(s)</span>
                   )}
                 </div>
 
-                {/* Upload zone */}
+                {/* Existing Images (When Editing) */}
+                {existingImages.length > 0 && (
+                  <div className="space-y-1 mb-2">
+                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Existing Images:</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {existingImages.map((url, idx) => (
+                        <div key={idx} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                          <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
+                          {idx === 0 && (
+                            <div className="absolute top-1 left-1 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                              Primary
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(url)}
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            title="Remove image"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload zone for new images */}
                 <label className="relative group cursor-pointer block">
                   <input
                     type="file"
@@ -564,35 +704,33 @@ export default function ProductsPage() {
                     onChange={handleImageChange}
                     className="sr-only"
                   />
-                  <div className="w-full h-24 border-2 border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center gap-2 group-hover:border-zinc-600 group-hover:bg-zinc-900/80 transition-all bg-zinc-900/50">
-                    <Upload className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-                    <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">Click to add images (multiple allowed)</span>
+                  <div className="w-full h-20 border-2 border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center gap-1 group-hover:border-zinc-600 group-hover:bg-zinc-900/80 transition-all bg-zinc-900/50">
+                    <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                    <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">Click to upload new images</span>
                   </div>
                 </label>
 
-                {/* Previews */}
+                {/* Previews of newly selected files */}
                 {imageFiles.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2 pt-1">
-                    {imageFiles.map((file, i) => {
-                      const url = URL.createObjectURL(file);
-                      return (
-                        <div key={i} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
-                          <img src={url} alt={file.name} className="w-full h-full object-cover" />
-                          {i === 0 && (
-                            <div className="absolute top-1 left-1 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                              Cover
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeImage(i)}
-                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                  <div className="space-y-1">
+                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">New Images to Upload:</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {imageFiles.map((file, i) => {
+                        const url = URL.createObjectURL(file);
+                        return (
+                          <div key={i} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                            <img src={url} alt={file.name} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeNewImage(i)}
+                              className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -600,7 +738,7 @@ export default function ProductsPage() {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
                 <textarea
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[100px]"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[90px]"
                   placeholder="Describe the product details..."
                   value={newProduct.description}
                   onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
@@ -610,19 +748,19 @@ export default function ProductsPage() {
               <div className="pt-4 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={closeModal}
                   className="flex-1 px-4 py-2 border border-zinc-800 rounded-lg text-sm font-bold uppercase tracking-widest text-zinc-400 hover:bg-zinc-900 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={isSaving}
                   className="flex-1 px-4 py-2 bg-white text-black rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {createMutation.isPending ? (
+                  {isSaving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : "Create Product"}
+                  ) : (editingProduct ? "Save Changes" : "Create Product")}
                 </button>
               </div>
             </form>

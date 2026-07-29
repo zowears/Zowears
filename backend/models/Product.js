@@ -20,8 +20,7 @@ const productSchema = new mongoose.Schema({
     index: true
   },
   fits: [{
-    type: String,
-    enum: ['Regular Fit', 'Oversized']
+    type: String
   }],
   status: { 
     type: String,

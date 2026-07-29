@@ -52,7 +52,6 @@ export function Navbar() {
       return data.map(p => ({
         ...p,
         id: p._id,
-        jp: p.jp || "新作",
         rating: p.rating || 5.0,
         reviews: p.reviews || 0,
         colors: p.colors || [{ name: "Onyx", hex: "#0a0a0a" }],
@@ -187,12 +186,12 @@ export function Navbar() {
             >
               <Search className="h-4 w-4 transition-transform group-hover:scale-110" />
             </button>
-            <button 
+            {/* <button 
               className="hidden rounded-full p-2.5 transition-all duration-300 hover:bg-white/5 hover:text-accent-red md:block" 
               aria-label="Account"
             >
               <User className="h-4 w-4" />
-            </button>
+            </button> */}
             <button
               onClick={() => setOpen(true)}
               className="relative group rounded-full p-2.5 transition-all duration-300 hover:bg-white/5 hover:text-accent-red"

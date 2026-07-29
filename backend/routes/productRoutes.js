@@ -303,15 +303,15 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
 
     // Update basic info
     if (name) product.name = name;
-    if (sku) product.sku = sku;
-    if (description) product.description = description;
+    if (sku !== undefined) product.sku = sku;
+    if (description !== undefined) product.description = description;
     if (mainCategory) product.mainCategory = mainCategory;
     if (subCategory !== undefined) product.subCategory = subCategory;
-    if (brand) product.brand = brand;
+    if (brand !== undefined) product.brand = brand;
     if (status) product.status = status;
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true' || isFeatured === true;
-    if (jp) product.jp = jp;
-    if (badge) product.badge = badge;
+    if (jp !== undefined) product.jp = jp;
+    if (badge !== undefined) product.badge = badge;
 
     // Update pricing
     if (costPrice !== undefined) product.costPrice = Number(costPrice);

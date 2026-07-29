@@ -20,7 +20,7 @@ export function Gallery() {
             Seen on the <span className="text-gradient">streets</span>
           </h2>
           <p className="mt-6 max-w-lg text-sm text-muted-foreground md:text-base">
-            Join the collective. Tag @zowears.pk to be featured in our monthly digital lookbook.
+            Join the collective. Tag @zowears.com to be featured in our monthly digital lookbook.
           </p>
         </div>
 

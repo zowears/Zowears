@@ -60,13 +60,14 @@ export default function CartPage() {
                         <div>
                           <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red mb-2">{p.category}</div>
                           <h3 className="font-display text-2xl font-bold tracking-tight">{p.name}</h3>
-                          <div className="mt-2 flex gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          <div className="mt-2 flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                            {it.fit && <span>Fit: {it.fit}</span>}
                             <span>Size: {it.size}</span>
                             <span>Color: {it.color}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-display text-xl font-bold">{formatPrice(p.price)}</div>
+                          <div className="font-display text-xl font-bold">{formatPrice(it.price || p.price)}</div>
                         </div>
                       </div>
 
