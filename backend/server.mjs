@@ -25,6 +25,8 @@ app.use(compression());
 app.use(
   cors({
     origin: [
+      "https://www.zowears.com",
+      "https://zowears.com",
       "https://zowears.vercel.app",
       "http://localhost:3000"
     ],

@@ -34,7 +34,7 @@ function ShopContent() {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["shop-products"],
-    queryFn: fetchProducts,
+    queryFn: () => fetchProducts(),
   });
 
   const [grid, setGrid] = React.useState(true);
