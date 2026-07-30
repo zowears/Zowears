@@ -5,6 +5,6 @@ export default function robots() {
       allow: "/",
       disallow: ["/admin/", "/api/", "/cart", "/checkout"],
     },
-    sitemap: "https://zowers.com/sitemap.xml",
+    sitemap: "https://zowears.com/sitemap.xml",
   };
 }
