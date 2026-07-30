@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://zowers.com/sitemap.xml
+Sitemap: https://zowears.com/sitemap.xml
