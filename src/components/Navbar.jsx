@@ -85,23 +85,24 @@ export function Navbar() {
         className={cn(
           "fixed top-1 z-40 w-full transition-all duration-700",
           scrolled
-            ? "glass-dark border-b border-white/5 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
+            ? "glass-dark py-3 shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
             : "bg-transparent py-5",
         )}
       >
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 md:px-8">
+        <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-4 md:px-8">
           
-          {/* Left: Brand Logo & Title + Mobile Menu Trigger */}
+          {/* Left: Hamburger (mobile only) */}
           <div className="flex items-center">
             <button
               onClick={() => setMobile(true)}
-              className="flex items-center justify-center text-white/70 hover:text-white mr-4 md:hidden p-1.5"
+              className="flex items-center justify-center text-foreground/60 hover:text-foreground md:hidden p-1.5"
               aria-label="Open menu"
             >
               <Menu className="h-5.5 w-5.5" />
             </button>
 
-            <Link href="/" className="group flex items-center gap-3 shrink-0">
+            {/* Logo — hidden on mobile (shown centered via absolute below) */}
+            <Link href="/" className="group hidden md:flex items-center gap-3 shrink-0">
               {/* Elegant SVG Calligraphy Logo Emblem */}
               {/* <div className="relative w-10 h-10 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-6"> */}
                 {/* Outer soft aura for hover glow */}
@@ -151,7 +152,7 @@ export function Navbar() {
               {/* </div> */}
               
               <div className="flex flex-col items-start leading-[0.8] justify-center">
-                <Image className="w-[150px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} priority />
+                <Image className=" w-[100px] lg:w-[150px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} priority />
                 {/* <span className="font-display text-xl sm:text-2xl font-black tracking-[-0.04em] text-white transition-colors duration-300 group-hover:text-accent-red">
                   ZOWEARS
                 </span>
@@ -162,16 +163,21 @@ export function Navbar() {
             </Link>
           </div>
 
+          {/* Logo centered absolutely on mobile */}
+          <Link href="/" className="group md:hidden absolute left-1/2 -translate-x-1/2 flex items-center shrink-0">
+            <Image className="w-[100px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} priority />
+          </Link>
+
           {/* Center: Navigation Links */}
           <nav className="hidden items-center justify-center gap-2 lg:gap-4 md:flex flex-1 mx-4">
             {nav.map((n) => (
               <Link
                 key={n.label}
                 href={n.to}
-                className="group relative px-2.5 py-1.5 text-[10.5px] lg:text-[13px] font-bold uppercase tracking-[0.25em] text-white/60 transition-colors duration-300 hover:text-white"
+                className="group relative px-2.5 py-1.5 text-[10.5px] lg:text-[13px] font-bold uppercase tracking-[0.25em] text-foreground/60 transition-colors duration-300 hover:text-foreground"
               >
                 {n.label}
-                <span className="absolute inset-0 w-full h-full bg-white/3 rounded-full scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300" />
+                <span className="absolute inset-0 w-full h-full bg-black/3 rounded-full scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300" />
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-0 bg-accent-red rounded-full transition-all duration-300 group-hover:w-1/2" />
               </Link>
             ))}
@@ -181,20 +187,20 @@ export function Navbar() {
           <div className="flex items-center gap-1 md:gap-3 shrink-0">
             <button
               onClick={() => setSearch(true)}
-              className="group relative rounded-full p-2.5 transition-all duration-300 hover:bg-white/5 hover:text-accent-red"
+              className="group relative rounded-full p-2.5 transition-all duration-300 hover:bg-black/5 hover:text-accent-red"
               aria-label="Search"
             >
               <Search className="h-4 w-4 transition-transform group-hover:scale-110" />
             </button>
             {/* <button 
-              className="hidden rounded-full p-2.5 transition-all duration-300 hover:bg-white/5 hover:text-accent-red md:block" 
+              className="hidden rounded-full p-2.5 transition-all duration-300 hover:bg-black/5 hover:text-accent-red md:block" 
               aria-label="Account"
             >
               <User className="h-4 w-4" />
             </button> */}
             <button
               onClick={() => setOpen(true)}
-              className="relative group rounded-full p-2.5 transition-all duration-300 hover:bg-white/5 hover:text-accent-red"
+              className="relative group rounded-full p-2.5 transition-all duration-300 hover:bg-black/5 hover:text-accent-red"
               aria-label="Cart"
             >
               <ShoppingBag className="h-4 w-4 transition-transform group-hover:scale-110" />
@@ -214,20 +220,20 @@ export function Navbar() {
         {search && (
           <form
             onSubmit={(e) => e.preventDefault()}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-2xl"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/98 backdrop-blur-2xl"
           >
-            <button type="button" onClick={closeSearch} className="absolute right-8 top-8 group p-4">
+            <button type="button" onClick={closeSearch} className="absolute right-8 top-8 group p-4 text-foreground/60 hover:text-foreground">
               <X className="h-8 w-8 transition-transform group-hover:rotate-90" />
             </button>
             
             <div className="w-full max-w-4xl px-6">
-              <div className="text-[10px] uppercase tracking-[0.6em] text-accent-red font-bold mb-4">Search Collective</div>
+              <div className="text-[10px] uppercase tracking-[0.6em] text-accent-red font-bold mb-4">Search Collection</div>
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Find your silhouette..."
-                className="w-full border-b-2 border-white/10 bg-transparent py-8 font-display text-4xl font-bold outline-none transition-colors focus:border-accent-red md:text-7xl"
+                placeholder="Find your style..."
+                className="w-full border-b-2 border-border bg-transparent py-8 font-display text-4xl font-bold outline-none transition-colors focus:border-accent-red md:text-7xl text-foreground"
               />
               
               {/* Search Results / Suggested Tags */}
@@ -243,9 +249,9 @@ export function Navbar() {
                         key={product.id}
                         href={`/product/${product.id}`}
                         onClick={closeSearch}
-                        className="group flex items-center gap-4 border border-white/5 bg-white/2 p-4 transition-all duration-300 hover:border-accent-red hover:bg-accent-red/5"
+                        className="group flex items-center gap-4 border border-border bg-surface p-4 transition-all duration-300 hover:border-accent-red hover:bg-accent-red/5"
                       >
-                        <div className="relative aspect-[3/4] w-16 shrink-0 overflow-hidden border border-white/10 bg-zinc-900">
+                        <div className="relative aspect-[3/4] w-16 shrink-0 overflow-hidden border border-border bg-surface">
                           {product.image && (
                             <Image
                               src={product.image}
@@ -267,7 +273,7 @@ export function Navbar() {
                               </span>
                             )}
                           </div>
-                          <h4 className="font-display text-base font-bold tracking-tight text-white uppercase truncate mt-1 group-hover:text-accent-red transition-colors">
+                          <h4 className="font-display text-base font-bold tracking-tight text-foreground uppercase truncate mt-1 group-hover:text-accent-red transition-colors">
                             {product.name}
                           </h4>
                           <p className="font-serif-jp text-[10px] text-muted-foreground/60 mt-0.5">
@@ -275,7 +281,7 @@ export function Navbar() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className="font-display text-sm font-bold text-white">
+                          <span className="font-display text-sm font-bold text-foreground">
                             {formatPrice(product.price)}
                           </span>
                         </div>
@@ -288,14 +294,14 @@ export function Navbar() {
                   </div>
                 ) : (
                   <div className="py-6">
-                    <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground mb-4 font-mono">// SUGGESTED CONCEPTS</div>
+                    <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground mb-4 font-mono">// SUGGESTED SEARCHES</div>
                     <div className="flex flex-wrap gap-3">
-                      {["Calligraphy", "Heavyweight", "Oversized", "Embroidery", "Premium"].map((t) => (
+                      {["Ringer T-shirts", "Hoodies", "Embroidery"].map((t) => (
                         <button
                           key={t}
                           type="button"
                           onClick={() => handleTagClick(t)}
-                          className="border border-white/10 px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all hover:border-accent-red hover:bg-accent-red cursor-pointer"
+                          className="border border-border px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all hover:border-accent-red hover:bg-accent-red hover:text-white cursor-pointer"
                         >
                           {t}
                         </button>
@@ -312,57 +318,32 @@ export function Navbar() {
       {/* Enhanced Mobile Menu */}
       <AnimatePresence>
         {mobile && (
-          <div className="fixed inset-0 z-50 bg-background">
-            <div className="flex h-24 items-center justify-between border-b border-white/5 px-6">
+          <div className="fixed inset-0 z-50 bg-white">
+            <div className="flex h-24 items-center justify-between border-b border-border px-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8">
-                  <svg className="w-full h-full text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="#0a0a0a" stroke="url(#mobRingGlow)" strokeWidth="1.5" />
-                    <path
-                      d="M50 22 C55 22, 64 30, 60 48 C55 64, 38 70, 36 78 C35 80, 39 80, 42 78 C52 74, 62 60, 65 48 C68 34, 58 22, 50 22 Z"
-                      fill="url(#mobLogoGlow)"
-                      filter="url(#mobLogoGlowFilter)"
-                    />
-                    <circle cx="58" cy="30" r="5" fill="#ff3333" filter="url(#mobLogoGlowFilter)" />
-                    <defs>
-                      <linearGradient id="mobLogoGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ffffff" />
-                        <stop offset="35%" stopColor="#ffffff" />
-                        <stop offset="100%" stopColor="#ff3333" />
-                      </linearGradient>
-                      <linearGradient id="mobRingGlow" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#ff3333" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.2" />
-                      </linearGradient>
-                      <filter id="mobLogoGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
-                        <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ff3333" floodOpacity="0.9" />
-                      </filter>
-                    </defs>
-                  </svg>
-                </div>
-                <div className="font-display text-2xl font-bold tracking-tight">ZOWEARS</div>
+                <Image className="w-[100px] h-full" src={Logo} alt="Zowears Logo" width={130} height={130} priority />
               </div>
-              <button onClick={() => setMobile(false)} className="p-2"><X className="h-6 w-6" /></button>
+              <button onClick={() => setMobile(false)} className="p-2 text-foreground/60 hover:text-foreground"><X className="h-6 w-6" /></button>
             </div>
-            <nav className="flex flex-col p-12">
+            <nav className="flex flex-col px-8">
               {nav.map((n, i) => (
                 <div key={i}>
                   <Link
                     href={n.to}
                     onClick={() => setMobile(false)}
-                    className="group flex items-center justify-between border-b border-white/5 py-8"
+                    className="group flex items-center justify-between border-b border-border py-6"
                   >
-                    <span className="font-display text-4xl font-bold tracking-tight group-hover:text-accent-red">{n.label}</span>
-                    <span className="font-serif text-lg text-white/10 group-hover:text-accent-red/20">{i + 1}</span>
+                    <span className="font-display text-3xl font-bold tracking-tight text-foreground group-hover:text-accent-red transition-colors">{n.label}</span>
+                    {/* <span className="font-serif text-lg text-foreground/10 group-hover:text-accent-red/20 transition-colors">{String(i + 1).padStart(2, '0')}</span> */}
                   </Link>
                 </div>
               ))}
             </nav>
-            <div className="absolute bottom-12 left-12 right-12 flex items-center justify-between">
+            <div className="absolute bottom-12 left-8 right-8 flex items-center justify-between">
               <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">© 2026 Zowears Collective</div>
               <div className="flex gap-4">
-                <span className="text-[10px] uppercase tracking-[0.4em]">IG</span>
-                <span className="text-[10px] uppercase tracking-[0.4em]">TW</span>
+                <span className="text-[10px] uppercase tracking-[0.4em] text-foreground/40">IG</span>
+                <span className="text-[10px] uppercase tracking-[0.4em] text-foreground/40">TW</span>
               </div>
             </div>
           </div>

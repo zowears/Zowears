@@ -4,8 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Zowear — Premium Japanese streetwear design system.
-   Dark luxury aesthetic. All tokens defined here. */
+/* Zowear — Premium streetwear design system.
+   Light Shopify-style aesthetic. All tokens defined here. */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -74,31 +74,31 @@
 }
 
 :root {
-  /* Zowear — Premium embroidery-gold token system */
+  /* Zowear — Light Shopify-style token system */
   --radius: 0rem;
-  --background: #0E0D0C;
-  --foreground: #F5F0E8;
-  --surface: #1A1917;
-  --surface-elevated: #222018;
-  --ink: #F5F0E8;
-  --ink-muted: #8A8377;
-  --card: #1A1917;
-  --card-foreground: #F5F0E8;
-  --popover: #1A1917;
-  --popover-foreground: #F5F0E8;
-  --primary: #F5F0E8;
-  --primary-foreground: #0E0D0C;
-  --secondary: #1A1917;
-  --secondary-foreground: #F5F0E8;
-  --muted: #1A1917;
-  --muted-foreground: #8A8377;
-  --accent: #2E2B28;
-  --accent-foreground: #F5F0E8;
+  --background: #FFFFFF;
+  --foreground: #111111;
+  --surface: #F5F3F0;
+  --surface-elevated: #EDEAE6;
+  --ink: #111111;
+  --ink-muted: #6B6B6B;
+  --card: #F5F3F0;
+  --card-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
+  --primary: #111111;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5F3F0;
+  --secondary-foreground: #111111;
+  --muted: #F0EDEA;
+  --muted-foreground: #6B6B6B;
+  --accent: #E8E4DF;
+  --accent-foreground: #111111;
   --accent-red: #C8A96E;
-  --destructive: #C8A96E;
-  --destructive-foreground: #0E0D0C;
-  --border: #2E2B28;
-  --input: #2E2B28;
+  --destructive: #E53E3E;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2DDD8;
+  --input: #E2DDD8;
   --ring: #C8A96E;
 }
 
@@ -106,7 +106,7 @@
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
   }
@@ -141,28 +141,28 @@
     content: "";
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04;
+    opacity: 0.025;
     pointer-events: none;
     z-index: 9999;
-    mix-blend-mode: overlay;
+    mix-blend-mode: multiply;
   }
 
-  /* Glassmorphism */
+  /* Glassmorphism — light mode */
   .glass {
-    @apply bg-background/60 backdrop-blur-xl border border-white/5;
+    @apply bg-white/70 backdrop-blur-xl border border-black/5;
   }
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-md border border-white/10;
+    @apply bg-white/95 backdrop-blur-md border-b border-black/8 shadow-sm;
   }
 
-  /* Text Gradient */
+  /* Text Gradient — warm gold on light background */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #C8A96E 0%, #E8D5A3 50%, #C8A96E 100%);
+    background-image: linear-gradient(135deg, #8A6430 0%, #C8A96E 50%, #8A6430 100%);
   }
 
   /* Selection */
-  ::selection { background: var(--accent-red); color: #0E0D0C; }
+  ::selection { background: #C8A96E; color: #FFFFFF; }
 
   /* Scrollbar - Minimal & Stylish */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -188,4 +188,3 @@
     mask-image: linear-gradient(to bottom, black 60%, transparent);
   }
 }
-

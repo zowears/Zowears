@@ -18,7 +18,7 @@ export function CartDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           <motion.aside
@@ -26,9 +26,9 @@ export function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-white/5 bg-surface shadow-2xl"
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-border bg-white shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-white/5 p-8">
+            <div className="flex items-center justify-between border-b border-border p-8">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red mb-1">Your bag</div>
                 <div className="font-display text-2xl font-bold tracking-tight">{items.length} item{items.length !== 1 ? "s" : ""}</div>
@@ -51,7 +51,7 @@ export function CartDrawer() {
                   </p>
                   <button
                     onClick={() => setOpen(false)}
-                    className="mt-10 border border-foreground px-10 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-colors hover:bg-foreground hover:text-background"
+                    className="mt-10 border border-foreground px-10 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-colors hover:bg-foreground hover:text-white"
                   >
                     Start Exploring
                   </button>
@@ -84,10 +84,10 @@ export function CartDrawer() {
                           </div>
                           
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center border border-white/10">
+                            <div className="flex items-center border border-border">
                               <button
                                 onClick={() => setQty(i, it.qty - 1)}
-                                className="p-2.5 hover:bg-white/5"
+                                className="p-2.5 hover:bg-black/5"
                                 aria-label="Decrease"
                               >
                                 <Minus className="h-3 w-3" />
@@ -95,7 +95,7 @@ export function CartDrawer() {
                               <span className="w-8 text-center text-xs font-bold">{it.qty}</span>
                               <button
                                 onClick={() => setQty(i, it.qty + 1)}
-                                className="p-2.5 hover:bg-white/5"
+                                className="p-2.5 hover:bg-black/5"
                                 aria-label="Increase"
                               >
                                 <Plus className="h-3 w-3" />
@@ -118,7 +118,7 @@ export function CartDrawer() {
             </div>
 
             {items.length > 0 && (
-              <div className="border-t border-white/5 bg-background/50 p-8 backdrop-blur-xl">
+              <div className="border-t border-border bg-white/90 p-8 backdrop-blur-xl">
                 <div className="mb-6 space-y-3">
                   <div className="flex justify-between text-xs">
                     <span className="uppercase tracking-[0.2em] text-muted-foreground">Subtotal</span>
@@ -142,7 +142,7 @@ export function CartDrawer() {
                   <Link
                     href="/cart"
                     onClick={() => setOpen(false)}
-                    className="flex h-14 w-full items-center justify-center border border-white/10 text-[10px] font-bold uppercase tracking-[0.3em] transition-colors hover:bg-white/5"
+                    className="flex h-14 w-full items-center justify-center border border-border text-[10px] font-bold uppercase tracking-[0.3em] transition-colors hover:bg-black/5"
                   >
                     View Silhouette
                   </Link>

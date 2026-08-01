@@ -203,10 +203,10 @@ export default function CheckoutPage() {
             Order Secured
           </h1>
           <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
-            Order ID: <span className="font-mono text-white/90">{createdOrder._id}</span>
+            Order ID: <span className="font-mono text-black/90">{createdOrder._id}</span>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            A confirmation receipt has been generated and dispatched to <span className="text-white font-medium">{createdOrder.email}</span>.
+            A confirmation receipt has been generated and dispatched to <span className="text-black font-medium">{createdOrder.email}</span>.
           </p>
 
           {/* WhatsApp Confirmation Status */}
@@ -218,7 +218,7 @@ export default function CheckoutPage() {
                 </svg>
               </div>
               <div className="space-y-1">
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black">
                   WhatsApp Confirmation
                 </h4>
                 <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-xl">
@@ -250,7 +250,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Tab Selector */}
-          <div className="mt-12 flex justify-center border-b border-white/5">
+          <div className="mt-12 flex justify-center border-b border-black/5">
             <button
               onClick={() => setSuccessTab("receipt")}
               className={`flex items-center gap-2 px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all border-b-2 ${
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
                 className="grid gap-8 md:grid-cols-12"
               >
                 {/* Shipping & Payment Details */}
-                <div className="md:col-span-7 bg-white/5 border border-white/5 p-8 space-y-8">
+                <div className="md:col-span-7 bg-black/5 border border-black/5 p-8 space-y-8">
                   {Object.keys(downloadLinks).length > 0 && (
                     <div className="bg-accent-red/5 border border-accent-red/20 p-6 space-y-4">
                       <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red flex items-center gap-2">
@@ -299,9 +299,9 @@ export default function CheckoutPage() {
                           .map((item) => {
                             const link = downloadLinks[item.productId];
                             return (
-                              <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40 border border-white/5 p-4">
+                              <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40 border border-black/5 p-4">
                                 <div>
-                                  <div className="text-[11px] font-bold uppercase tracking-wider text-white">
+                                  <div className="text-[11px] font-bold uppercase tracking-wider text-black">
                                     {item.name}
                                   </div>
                                   <div className="text-[9px] text-muted-foreground/60 uppercase tracking-widest mt-0.5">
@@ -334,7 +334,7 @@ export default function CheckoutPage() {
                       Shipping Destination
                     </h3>
                     <div className="text-sm text-zinc-300 leading-relaxed font-light">
-                      <p className="font-bold text-white mb-1">
+                      <p className="font-bold text-black mb-1">
                         {createdOrder.shippingAddress.firstName} {createdOrder.shippingAddress.lastName}
                       </p>
                       <p>{createdOrder.shippingAddress.address}</p>
@@ -343,12 +343,12 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
+                  <div className="grid grid-cols-2 gap-4 pt-6 border-t border-black/5">
                     <div>
                       <h4 className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">
                         Shipping Option
                       </h4>
-                      <div className="flex items-center gap-2 text-sm text-white">
+                      <div className="flex items-center gap-2 text-sm text-black">
                         <Truck className="h-4 w-4 text-accent-red" />
                         <span className="font-bold uppercase tracking-wider text-xs">
                           {createdOrder.shippingMethod}
@@ -359,7 +359,7 @@ export default function CheckoutPage() {
                       <h4 className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">
                         Payment Method
                       </h4>
-                      <div className="flex items-center gap-2 text-sm text-white">
+                      <div className="flex items-center gap-2 text-sm text-black">
                         <CreditCard className="h-4 w-4 text-accent-red" />
                         <span className="font-bold uppercase tracking-wider text-xs">
                           {createdOrder.paymentMethod}
@@ -368,14 +368,14 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   
-                  <div className="pt-6 border-t border-white/5 text-xs text-muted-foreground leading-relaxed">
+                  <div className="pt-6 border-t border-black/5 text-xs text-muted-foreground leading-relaxed">
                     <p>Estimated Delivery: 3-5 business days.</p>
                     <p className="mt-1">For any queries, please email support@zowears.com with your Order ID.</p>
                   </div>
                 </div>
 
                 {/* Items & Price Summary */}
-                <aside className="md:col-span-5 bg-white/2 border border-white/5 p-8 flex flex-col justify-between">
+                <aside className="md:col-span-5 bg-black/2 border border-black/5 p-8 flex flex-col justify-between">
                   <div>
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red mb-6">
                       Silhouette Items
@@ -384,7 +384,7 @@ export default function CheckoutPage() {
                       {createdOrder.items.map((item, idx) => (
                         <div key={idx} className="flex gap-4 items-center">
                           {item.image && (
-                            <div className="relative aspect-[3/4] w-14 shrink-0 overflow-hidden bg-background border border-white/5">
+                            <div className="relative aspect-[3/4] w-14 shrink-0 overflow-hidden bg-background border border-black/5">
                               <Image src={item.image} alt={item.name} fill sizes="60px" className="object-cover" />
                             </div>
                           )}
@@ -396,7 +396,7 @@ export default function CheckoutPage() {
                               {item.size} · {item.color} · ×{item.quantity}
                             </div>
                           </div>
-                          <div className="font-display text-sm font-bold text-white">
+                          <div className="font-display text-sm font-bold text-black">
                             {formatPrice(item.price * item.quantity)}
                           </div>
                         </div>
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="mt-8 border-t border-white/10 pt-6 space-y-3">
+                  <div className="mt-8 border-t border-black/10 pt-6 space-y-3">
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em]">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="text-foreground">{formatPrice(createdOrder.totalAmount - createdOrder.shippingCost)}</span>
@@ -415,7 +415,7 @@ export default function CheckoutPage() {
                         {createdOrder.shippingCost === 0 ? "Complimentary" : formatPrice(createdOrder.shippingCost)}
                       </span>
                     </div>
-                    <div className="flex justify-between pt-4 border-t border-white/5">
+                    <div className="flex justify-between pt-4 border-t border-black/5">
                       <span className="text-[11px] font-bold uppercase tracking-[0.4em]">Total</span>
                       <span className="font-display text-2xl font-bold text-accent-red">
                         {formatPrice(createdOrder.totalAmount)}
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-4">
                       <Inbox className="h-6 w-6 text-accent-red" />
                       <div className="text-left">
-                        <div className="text-xs font-bold uppercase tracking-[0.1em] text-white">
+                        <div className="text-xs font-bold uppercase tracking-[0.1em] text-black">
                           Real-time Email Sandbox Available
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -457,9 +457,9 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Simulated Email Client Interface */}
-                <div className="border border-white/10 bg-[#09090b] overflow-hidden shadow-2xl">
+                <div className="border border-black/10 bg-[#09090b] overflow-hidden shadow-2xl">
                   {/* Email Client Header Bar */}
-                  <div className="flex items-center gap-2 border-b border-white/10 bg-white/2 px-6 py-4">
+                  <div className="flex items-center gap-2 border-b border-black/10 bg-black/2 px-6 py-4">
                     <div className="h-3 w-3 rounded-full bg-red-500" />
                     <div className="h-3 w-3 rounded-full bg-yellow-500" />
                     <div className="h-3 w-3 rounded-full bg-green-500" />
@@ -469,7 +469,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Mail Info Panel */}
-                  <div className="border-b border-white/5 bg-[#0e0e11] px-8 py-6 space-y-2">
+                  <div className="border-b border-black/5 bg-[#0e0e11] px-8 py-6 space-y-2">
                     <div className="flex text-xs leading-normal">
                       <span className="w-16 text-zinc-500 font-bold uppercase tracking-wider">From:</span>
                       <span className="text-zinc-300">Zowears Collective &lt;orders@zowears.com&gt;</span>
@@ -480,12 +480,12 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex text-xs leading-normal">
                       <span className="w-16 text-zinc-500 font-bold uppercase tracking-wider">Subject:</span>
-                      <span className="text-white font-bold">ZOWEARS COLLECTIVE - Order Confirmed #{createdOrder._id}</span>
+                      <span className="text-black font-bold">ZOWEARS COLLECTIVE - Order Confirmed #{createdOrder._id}</span>
                     </div>
                   </div>
 
                   {/* Email HTML Body Display */}
-                  <div className="p-4 sm:p-8 bg-[#121214] max-h-[60vh] overflow-y-auto border-t border-white/5">
+                  <div className="p-4 sm:p-8 bg-[#121214] max-h-[60vh] overflow-y-auto border-t border-black/5">
                     {createdOrder.emailHtml ? (
                       <div 
                         className="email-iframe-container bg-black border border-zinc-900 mx-auto rounded"
@@ -506,7 +506,7 @@ export default function CheckoutPage() {
           <div className="mt-16">
             <Link 
               href="/shop"
-              className="border border-white/20 px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-white transition-all hover:bg-white hover:text-black hover:border-white"
+              className="border border-black/20 px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-black transition-all hover:bg-black hover:text-black hover:border-black"
             >
               Return to Shop
             </Link>
@@ -538,7 +538,7 @@ export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-24 pt-24 md:px-8 md:pt-32">
       {/* Checkout Page Header */}
-      <div className="mb-12 flex items-center justify-between border-b border-white/5 pb-8">
+      <div className="mb-12 flex items-center justify-between border-b border-black/5 pb-8">
         <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl">Checkout</h1>
         <Link href="/cart" className="group flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
@@ -553,11 +553,11 @@ export default function CheckoutPage() {
           <div className="mb-16 flex flex-wrap items-center gap-6">
             {steps.map((s, i) => (
               <div key={s} className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 items-center justify-center border font-display text-sm transition-all ${i <= step ? "border-accent-red bg-accent-red text-white" : "border-white/10 text-muted-foreground"}`}>
+                <div className={`flex h-10 w-10 items-center justify-center border font-display text-sm transition-all ${i <= step ? "border-accent-red bg-accent-red text-black" : "border-black/10 text-muted-foreground"}`}>
                   {i < step ? <Check className="h-4 w-4" /> : i + 1}
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-[0.3em] ${i === step ? "text-foreground" : "text-muted-foreground"}`}>{s}</span>
-                {i < steps.length - 1 && <div className="ml-2 h-px w-12 bg-white/5" />}
+                {i < steps.length - 1 && <div className="ml-2 h-px w-12 bg-black/5" />}
               </div>
             ))}
           </div>
@@ -644,7 +644,7 @@ export default function CheckoutPage() {
                   { n: "Standard Shipping", d: "3–5 business days", p: standardShippingCost },
                   ...(isKarachi ? [{ n: "Express Shipping", d: "72 hours delivery", p: expressShippingCost }] : [])
                 ].map((o) => (
-                  <label key={o.n} className="flex cursor-pointer items-center justify-between border border-white/5 bg-white/5 p-6 transition-all hover:border-white/20 has-[:checked]:border-accent-red">
+                  <label key={o.n} className="flex cursor-pointer items-center justify-between border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
                     <div className="flex items-center gap-4">
                       <input 
                         type="radio" 
@@ -670,7 +670,7 @@ export default function CheckoutPage() {
             {step === 2 && (
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                 {["Cash on delivery"].map((m, i) => (
-                  <label key={m} className="flex cursor-pointer items-center gap-4 border border-white/5 bg-white/5 p-6 transition-all hover:border-white/20 has-[:checked]:border-accent-red">
+                  <label key={m} className="flex cursor-pointer items-center gap-4 border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
                     <input 
                       type="radio" 
                       name="pay" 
@@ -685,10 +685,10 @@ export default function CheckoutPage() {
             )}
 
             {/* Action Buttons */}
-            <div className="mt-16 flex items-center justify-between border-t border-white/5 pt-12">
+            <div className="mt-16 flex items-center justify-between border-t border-black/5 pt-12">
               <button 
                 onClick={() => setStep((s) => Math.max(0, s - 1))} 
-                className="border border-white/10 px-10 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-white/5 disabled:opacity-20" 
+                className="border border-black/10 px-10 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-black/5 disabled:opacity-20" 
                 disabled={step === 0 || isSubmitting}
               >
                 Previous Step
@@ -698,7 +698,7 @@ export default function CheckoutPage() {
                 <button 
                   onClick={handleCompleteOrder}
                   disabled={isSubmitting}
-                  className="flex items-center gap-3 bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-white disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
+                  className="flex items-center gap-3 bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-black disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
@@ -712,7 +712,7 @@ export default function CheckoutPage() {
               ) : (
                 <button 
                   onClick={handleNextStep}
-                  className="bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-white"
+                  className="bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-black"
                 >
                   Continue to {step === 0 ? "Shipping" : "Payment"}
                 </button>
@@ -723,7 +723,7 @@ export default function CheckoutPage() {
 
         {/* Right Sidebar: Checkout Bag Review */}
         <aside className="md:col-span-4">
-          <div className="sticky top-32 bg-white/5 p-8 border border-white/5">
+          <div className="sticky top-32 bg-black/5 p-8 border border-black/5">
             <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red mb-8">Review Silhouette</div>
             <div className="max-h-[40vh] space-y-6 overflow-y-auto pr-4 no-scrollbar">
               {items.map((it, i) => {
@@ -731,7 +731,7 @@ export default function CheckoutPage() {
                 if (!p) return null;
                 return (
                   <div key={i} className="flex gap-4">
-                    <div className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden bg-background border border-white/5">
+                    <div className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden bg-background border border-black/5">
                       <Image src={p.image} alt={p.name} fill sizes="80px" className="object-cover" />
                     </div>
                     <div className="flex-1 space-y-1">
@@ -744,7 +744,7 @@ export default function CheckoutPage() {
               })}
             </div>
             
-            <div className="mt-8 space-y-4 border-t border-white/10 pt-8">
+            <div className="mt-8 space-y-4 border-t border-black/10 pt-8">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em]">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
@@ -755,7 +755,7 @@ export default function CheckoutPage() {
                   {shippingCost === 0 ? "Free" : formatPrice(shippingCost)}
                 </span>
               </div>
-              <div className="flex justify-between pt-4 border-t border-white/10">
+              <div className="flex justify-between pt-4 border-t border-black/10">
                 <span className="text-[11px] font-bold uppercase tracking-[0.4em]">Total</span>
                 <span className="font-display text-3xl font-bold text-accent-red">{formatPrice(subtotal + shippingCost)}</span>
               </div>
@@ -796,8 +796,8 @@ function Field({ label, type = "text", name, wide, placeholder, value, onChange,
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full border bg-white/2 bg-transparent px-5 py-4 text-sm font-medium outline-none transition-colors placeholder:text-white/10 ${
-          error ? "border-accent-red/50 focus:border-accent-red" : "border-white/5 focus:border-accent-red"
+        className={`w-full border bg-black/2 bg-transparent px-5 py-4 text-sm font-medium outline-none transition-colors placeholder:text-black/10 ${
+          error ? "border-accent-red/50 focus:border-accent-red" : "border-black/5 focus:border-accent-red"
         }`} 
       />
     </label>

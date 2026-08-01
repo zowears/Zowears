@@ -128,9 +128,9 @@ function ShopContent() {
           step={100}
           value={price}
           onChange={(e) => setPrice(Number(e.target.value))}
-          className="w-full accent-accent-red bg-white/10 h-1 rounded-full appearance-none cursor-pointer"
+          className="w-full accent-accent-red bg-black/10 h-1 rounded-full appearance-none cursor-pointer"
         />
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground/40">
+        <div className="mt-2 flex justify-between text-[10px] text-black/70">
           <span>Rs. 2,000</span>
           <span>Rs. 5,000</span>
         </div>

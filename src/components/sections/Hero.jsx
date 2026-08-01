@@ -54,9 +54,9 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden pb-16 pt-18 bg-[#0E0D0C]">
-      {/* Subtle Grid Overlay for texture */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1e1e1e_1px,transparent_1px)] bg-size-[24px_24px] opacity-10 pointer-events-none" />
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden pb-4 pt-18 bg-[#FAFAF9]">
+      {/* Subtle dot grid overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(#d4d0cb_1px,transparent_1px)] bg-size-[24px_24px] opacity-60 pointer-events-none" />
 
       <div className="max-w-[1600px] w-full mx-auto px-4 md:px-8">
         <motion.div
@@ -67,10 +67,10 @@ export function Hero() {
           className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center"
         >
           {/* Left Content Column */}
-          <div className="lg:col-span-5 flex flex-col justify-center space-y-8 pr-0 lg:pr-8">
+          <div className="lg:col-span-5 flex flex-col hidden lg:flex justify-center space-y-8 pr-0 lg:pr-8">
             {/* Social Icons Bar */}
-            <motion.div variants={textVariants} className="flex items-center gap-2 text-white/40">
-              <div className="w-8 h-px bg-[#2E2B28]" />
+            <motion.div variants={textVariants} className="flex items-center gap-2 text-foreground/40">
+              <div className="w-8 h-px bg-border" />
               <Link href="https://instagram.com/zowears.co" target="_blank" className="hover:text-accent-red transition-colors duration-300 flex items-center gap-1">
                 <Instagram className="w-4 h-4" />
                 <span className="text-sm uppercase font-bold tracking-widest">Instagram</span>
@@ -79,7 +79,7 @@ export function Hero() {
 
             {/* Headline */}
             <motion.div variants={textVariants} className="space-y-2">
-              <h1 className="font-display text-5xl sm:text-7xl lg:text-[3.5rem] xl:text-[4.5rem] font-black tracking-[-0.04em] leading-[0.9] uppercase text-[#F5F0E8]">
+              <h1 className="font-display text-5xl sm:text-7xl lg:text-[3.5rem] xl:text-[4.5rem] font-black tracking-[-0.04em] leading-[0.9] uppercase text-foreground">
                 PREMIUM <br />
                 <span className="text-gradient">EMBROIDERED</span> <br />
                 STREETWEAR.
@@ -89,7 +89,7 @@ export function Hero() {
             {/* Sub-headline / Description */}
             <motion.div variants={textVariants}>
               <p className="text-muted-foreground text-sm sm:text-base max-w-lg leading-relaxed font-sans font-light">
-                Pakistan's ultimate fashion drop. Blending intricate Arabic calligraphy and diverse modern art with high-end streetwear. Discover our collection of printed tees, heavyweight hoodies, and plain oversized essentials—each custom-tailored in your choice of <strong className="text-[#F5F0E8]">Normal</strong> or <strong className="text-accent-red font-bold">Premium</strong> fabric.
+                Pakistan's ultimate fashion drop. Blending intricate Arabic calligraphy and diverse modern art with high-end streetwear. Discover our collection of printed tees, heavyweight hoodies, and plain oversized essentials—each custom-tailored in your choice of <strong className="text-foreground">Normal</strong> or <strong className="text-accent-red font-bold">Premium</strong> fabric.
               </p>
             </motion.div>
 
@@ -97,18 +97,17 @@ export function Hero() {
             <motion.div variants={textVariants} className="flex flex-wrap gap-4 pt-2">
               <Link
                 href="/shop"
-                className="group/btn relative inline-flex items-center justify-center overflow-hidden bg-accent-red px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#0E0D0C] rounded-full transition-all duration-300 hover:shadow-[0_0_25px_rgba(200,169,110,0.4)]"
+                className="group/btn relative inline-flex items-center justify-center overflow-hidden bg-foreground px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white rounded-full transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
               >
                 <span className="relative z-10">Shop Now</span>
-                <div className="absolute inset-0 -translate-x-full bg-[#F5F0E8] transition-transform duration-500 group-hover/btn:translate-x-0" />
-                {/* Text color shift helper */}
-                <div className="absolute inset-0 flex items-center justify-center translate-y-full text-[#0E0D0C] font-bold uppercase tracking-[0.2em] text-[11px] transition-all duration-500 group-hover/btn:translate-y-0 z-20">
+                <div className="absolute inset-0 -translate-x-full bg-accent-red transition-transform duration-500 group-hover/btn:translate-x-0" />
+                <div className="absolute inset-0 flex items-center justify-center translate-y-full text-white font-bold uppercase tracking-[0.2em] text-[11px] transition-all duration-500 group-hover/btn:translate-y-0 z-20">
                   Shop Now
                 </div>
               </Link>
               <Link
                 href="/shop?c=new"
-                className="group relative inline-flex items-center justify-center overflow-hidden border border-[#2E2B28] hover:border-[#C8A96E] px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5F0E8] rounded-full transition-all duration-300 hover:bg-[#C8A96E]/5"
+                className="group relative inline-flex items-center justify-center overflow-hidden border border-border hover:border-accent-red px-8 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground rounded-full transition-all duration-300 hover:bg-accent-red/5"
               >
                 Explore More
               </Link>
@@ -142,7 +141,7 @@ export function Hero() {
                   {/* Horizontal text (when active/expanded) */}
                   <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 w-full text-center z-20 px-4 transition-all duration-500 ${activeIndex === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     <h3 className="text-[#F5F0E8] text-base sm:text-xl lg:text-2xl font-bold tracking-[0.2em] uppercase font-display translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                      EMBROIDERED & CALLIGRAPHY ART
+                      EMBROIDERED
                     </h3>
                     <p className="text-[10px] text-accent-red font-bold tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500 mt-2">
                       View Collection
@@ -154,7 +153,7 @@ export function Hero() {
                       className="text-[#F5F0E8] text-xs sm:text-sm font-bold tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-500 group-hover:text-accent-red group-hover:-translate-y-2"
                       style={{ writingMode: "vertical-lr", transform: "rotate(180deg)" }}
                     >
-                      #EMBROIDERED & CALLIGRAPHY
+                      #EMBROIDERED
                     </span>
                   </div>
                 </Link>
@@ -179,7 +178,7 @@ export function Hero() {
                   {/* Horizontal text (when active/expanded) */}
                   <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 w-full text-center z-20 px-4 transition-all duration-500 ${activeIndex === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     <h3 className="text-[#F5F0E8] text-base sm:text-xl lg:text-2xl font-bold tracking-[0.2em] uppercase font-display translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                      PRINTED & HOODIES
+                      HEAVY HOODIES
                     </h3>
                     <p className="text-[10px] text-accent-red font-bold tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500 mt-2">
                       View Collection
@@ -191,7 +190,7 @@ export function Hero() {
                       className="text-[#F5F0E8] text-xs sm:text-sm font-bold tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-500 group-hover:text-accent-red group-hover:-translate-y-2"
                       style={{ writingMode: "vertical-lr", transform: "rotate(180deg)" }}
                     >
-                      #PRINTED & HOODIES
+                      #HEAVY HOODIES
                     </span>
                   </div>
                 </Link>
@@ -216,7 +215,7 @@ export function Hero() {
                   {/* Horizontal text (when active/expanded) */}
                   <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 w-full text-center z-20 px-4 transition-all duration-500 ${activeIndex === 2 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     <h3 className="text-[#F5F0E8] text-base sm:text-xl lg:text-2xl font-bold tracking-[0.2em] uppercase font-display translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                      NORMAL & PREMIUM
+                      GOOD QUALITY FABRICS
                     </h3>
                     <p className="text-[10px] text-accent-red font-bold tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-500 mt-2">
                       View Collection
@@ -228,7 +227,7 @@ export function Hero() {
                       className="text-[#F5F0E8] text-xs sm:text-sm font-bold tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-500 group-hover:text-accent-red group-hover:-translate-y-2"
                       style={{ writingMode: "vertical-lr", transform: "rotate(180deg)" }}
                     >
-                      #NORMAL & PREMIUM
+                      #GOOD QUALITY FABRICS
                     </span>
                   </div>
                 </Link>

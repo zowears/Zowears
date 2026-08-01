@@ -7,8 +7,8 @@ import lifestyle from "@/assets/Shadow.jpg";
 
 export function Story() {
   return (
-    <section className="relative overflow-hidden border-y border-white/5 bg-surface py-18">
-      <div className="pointer-events-none absolute -left-20 top-1/2 -translate-y-1/2 select-none font-sans text-[clamp(200px,40vw,800px)] font-black leading-none text-foreground/[0.02] uppercase tracking-widest">
+    <section className="relative overflow-hidden border-y border-border bg-surface py-12">
+      <div className="pointer-events-none absolute -left-20 top-1/2 -translate-y-1/2 select-none font-sans text-[clamp(200px,40vw,800px)] font-black leading-none text-foreground/[0.03] uppercase tracking-widest">
         CRAFTED
       </div>
       
@@ -33,7 +33,7 @@ export function Story() {
               <p>
                 Deeply rooted in heritage, our designs travel across borders. From our workshop to the streets of Dubai, Riyadh, Doha, and the wider Gulf, we bring custom calligraphy script, hand-finished heavyweight cotton garments, and express door-to-door delivery.
               </p>
-              <p className="font-serif text-white/50 text-xs leading-relaxed border-l-2 border-accent-red/40 pl-4 py-1.5 font-light my-4" dir="rtl" style={{ textAlign: "right", fontFamily: "var(--font-serif-jp), serif" }}>
+              <p className="font-serif text-foreground/40 text-xs leading-relaxed border-l-2 border-accent-red/40 pl-4 py-1.5 font-light my-4" dir="rtl" style={{ textAlign: "right", fontFamily: "var(--font-serif-jp), serif" }}>
                 تصاميمنا الفاخرة تعبر الحدود لتصلكم مباشرة في دبي، الرياض، والدوحة، محملة بجمال الخط العربي وجودة القطن الفاخر. شحن سريع ومباشر لكافة دول الخليج العربي.
               </p>
               <p className="font-serif text-foreground text-xl md:text-2xl border-l-2 border-accent-red pl-6 py-2">
@@ -42,7 +42,7 @@ export function Story() {
               </p>
             </div>
 
-            <div className="mt-16 grid grid-cols-3 gap-8 border-t border-white/5 pt-12">
+            <div className="mt-16 grid grid-cols-3 gap-8 border-t border-border pt-6">
               <Stat n="180+" l="GSM Cotton" />
               <Stat n="48h" l="Hand-finish" />
               <Stat n="∞" l="Refinement" />

@@ -5,9 +5,9 @@ import { ArrowRight } from "lucide-react";
 
 export function Newsletter() {
   return (
-    <section className="bg-background py-20">
+    <section className="bg-surface py-12">
       <div className="mx-auto max-w-[1600px] px-4 md:px-8">
-        <div className="relative overflow-hidden border border-white/5 bg-white/[0.02] px-8 py-20 md:px-24 md:py-32">
+        <div className="relative overflow-hidden border border-border bg-background px-8 py-12 md:px-24 md:py-32">
           <div className="relative z-10 grid gap-16 lg:grid-cols-2 lg:items-center">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -37,7 +37,7 @@ export function Newsletter() {
                   <input
                     type="email"
                     placeholder="abcd@gmail.com"
-                    className="w-full border-b border-white/10 bg-transparent py-4 font-display text-2xl font-bold tracking-tighter outline-none transition-colors focus:border-accent-red"
+                    className="w-full border-b border-border bg-transparent py-4 font-display text-2xl font-bold tracking-tighter outline-none transition-colors focus:border-accent-red text-foreground"
                   />
                 </div>
                 <button className="group relative flex items-center justify-center gap-4 bg-foreground px-12 py-5 text-[11px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-white">

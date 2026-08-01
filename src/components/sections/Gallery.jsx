@@ -13,15 +13,12 @@ const images = [img1, img2, img3, img4, img5, img6];
 
 export function Gallery() {
   return (
-    <section className="bg-background py-16">
+    <section className="bg-background py-12">
       <div className="mx-auto max-w-[1600px] px-4 md:px-8">
         <div className="mb-12 flex flex-col items-center text-center">
           <h2 className="mt-4 font-display text-4xl font-bold tracking-[-0.05em] md:text-7xl">
             Seen on the <span className="text-gradient">streets</span>
           </h2>
-          <p className="mt-6 max-w-lg text-sm text-muted-foreground md:text-base">
-            Join the collective. Tag @zowears.com to be featured in our monthly digital lookbook.
-          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">

@@ -97,15 +97,15 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased">
         <Providers>
-          <AnnouncementBar />
+          {/* <AnnouncementBar /> */}
           <Navbar />
           <main>{children}</main>
           <Footer />
           <CartDrawer />
-          <Toaster position="bottom-right" theme="dark" />
+          <Toaster position="bottom-right" theme="light" />
           <AnalyticsTracker />
         </Providers>
-      </body>
+        </body>
     </html>
   );
 }
