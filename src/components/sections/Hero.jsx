@@ -54,7 +54,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden pb-4 pt-18 bg-[#FAFAF9]">
+    <section className="relative lg:min-h-[80vh] flex items-center overflow-hidden pb-4 pt-24 md:pt-32 bg-[#FAFAF9]">
       {/* Subtle dot grid overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(#d4d0cb_1px,transparent_1px)] bg-size-[24px_24px] opacity-60 pointer-events-none" />
 
