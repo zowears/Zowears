@@ -1,7 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default async function sitemap() {
-  const baseUrl = "https://zowers.com";
+  const baseUrl = "https://zowears.com";
   
   // Fetch products and designs to include in sitemap
   let products = [];
