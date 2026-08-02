@@ -44,6 +44,12 @@ function ShopContent() {
   const [price, setPrice] = React.useState(5000);
   const [size, setSize] = React.useState([]);
   const [sort, setSort] = React.useState("featured");
+  const [page, setPage] = React.useState(1);
+  const itemsPerPage = 12;
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [mainCat, subCat, price, sort]);
 
   React.useEffect(() => {
     setMainCat(searchParams.get("main") || undefined);
@@ -57,10 +63,14 @@ function ShopContent() {
     if (subCat) list = list.filter((p) => p.subCategory === subCat);
     list = list.filter((p) => p.price <= price);
     if (sort === "asc") list.sort((a, b) => a.price - b.price);
-    if (sort === "desc") list.sort((a, b) => b.price - a.price);
-    if (sort === "rating") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    else if (sort === "desc") list.sort((a, b) => b.price - a.price);
+    else if (sort === "rating") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    else list.sort((a, b) => (b.views || 0) - (a.views || 0));
     return list;
   }, [products, mainCat, subCat, price, sort]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedProducts = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const Filters = (
     <div className="space-y-12">
@@ -208,7 +218,7 @@ function ShopContent() {
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-[3/4] animate-pulse bg-white/5 rounded-xl" />
               ))
-            ) : filtered.map((p, i) => (
+            ) : paginatedProducts.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
           </div>
@@ -220,17 +230,33 @@ function ShopContent() {
             </div>
           )}
 
-          <div className="mt-24 flex items-center justify-center gap-2">
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                className={`h-12 w-12 border text-[10px] font-bold transition-all ${n === 1 ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"}`}
+          {totalPages > 1 && (
+            <div className="mt-24 flex flex-wrap items-center justify-center gap-2">
+              <button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="mr-2 border border-white/5 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-white/5 disabled:opacity-50 disabled:pointer-events-none"
               >
-                {n}
+                Prev
               </button>
-            ))}
-            <button className="ml-4 border border-white/5 px-8 py-4 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-white/5">Next page</button>
-          </div>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`h-12 w-12 border text-[10px] font-bold transition-all ${n === page ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"}`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button 
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="ml-2 border border-white/5 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-white/5 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

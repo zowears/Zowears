@@ -70,7 +70,7 @@ export function CartDrawer() {
                         className="flex gap-6"
                       >
                         <div className="relative aspect-[3/4] w-24 shrink-0 overflow-hidden bg-background">
-                          <Image src={p.image} alt={p.name} fill sizes="96px" className="object-cover" />
+                          <Image src={typeof p.image === 'object' && p.image?.url ? p.image.url : (p.image || "")} alt={p.name} fill sizes="96px" className="object-cover" />
                         </div>
                         <div className="flex flex-1 flex-col justify-between py-1">
                           <div>

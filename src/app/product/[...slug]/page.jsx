@@ -324,7 +324,7 @@ export default function ProductPage() {
                   qty,
                   name: p.name,
                   price: effectivePrice,
-                  image: p.images?.[0] || p.image,
+                  image: p.images?.[0]?.url || p.images?.[0] || p.image,
                   category: p.category
                 })}
               >

@@ -732,7 +732,7 @@ export default function CheckoutPage() {
                 return (
                   <div key={i} className="flex gap-4">
                     <div className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden bg-background border border-black/5">
-                      <Image src={p.image} alt={p.name} fill sizes="80px" className="object-cover" />
+                      <Image src={typeof p.image === 'object' && p.image?.url ? p.image.url : (p.image || "")} alt={p.name} fill sizes="80px" className="object-cover" />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">{p.name}</div>
