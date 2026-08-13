@@ -9,16 +9,10 @@ const productSchema = new mongoose.Schema({
   brand: { type: String },
   jp: { type: String },
   
-  mainCategory: { 
-    type: String,
-    enum: ["Men's Wear", "Girls Wear", "Plain Tees", "Designs"],
-    required: true,
-    index: true 
-  },
-  subCategory: {
+  categories: [{ 
     type: String,
     index: true
-  },
+  }],
   fits: [{
     type: String
   }],
@@ -91,8 +85,8 @@ productSchema.pre('save', async function () {
 });
 
 // Create indexes for common queries
-productSchema.index({ mainCategory: 1, subCategory: 1, isFeatured: 1 });
-productSchema.index({ mainCategory: 1, status: 1 });
+productSchema.index({ categories: 1, isFeatured: 1 });
+productSchema.index({ categories: 1, status: 1 });
 productSchema.index({ stock: 1, lowStockThreshold: 1 });
 productSchema.index({ name: "text", description: "text", jp: "text" }, { default_language: "english" });
 

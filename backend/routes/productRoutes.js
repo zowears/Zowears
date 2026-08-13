@@ -36,12 +36,10 @@ router.get('/', async (req, res) => {
     
     const query = { status: 'active' };
     
-    // Filter by category
-    if (req.query.mainCategory) {
-      query.mainCategory = req.query.mainCategory;
-    }
-    if (req.query.subCategory) {
-      query.subCategory = req.query.subCategory;
+    // Filter by categories (supports multiple comma-separated categories)
+    if (req.query.categories) {
+      const cats = req.query.categories.split(',');
+      query.categories = { $in: cats };
     }
     
     // Filter by price range
@@ -177,8 +175,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      mainCategory,
-      subCategory,
+      categories,
       brand,
       status,
       isFeatured,
@@ -195,10 +192,19 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       badge
     } = req.body;
 
-    if (!name || !mainCategory || !price) {
+    if (!name || !categories || !price) {
       return res.status(400).json({ 
-        message: 'Name, main category, and price are required' 
+        message: 'Name, categories, and price are required' 
       });
+    }
+
+    let parsedCategories = [];
+    if (categories) {
+      try {
+        parsedCategories = typeof categories === 'string' ? JSON.parse(categories) : categories;
+      } catch (e) {
+        parsedCategories = Array.isArray(categories) ? categories : [];
+      }
     }
 
     // Process images
@@ -242,8 +248,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      mainCategory,
-      subCategory,
+      categories: parsedCategories,
       brand,
       status: status || 'active',
       isFeatured: isFeatured === 'true' || isFeatured === true,
@@ -277,8 +282,7 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
       name,
       sku,
       description,
-      mainCategory,
-      subCategory,
+      categories,
       brand,
       status,
       isFeatured,
@@ -305,8 +309,13 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
     if (name) product.name = name;
     if (sku !== undefined) product.sku = sku;
     if (description !== undefined) product.description = description;
-    if (mainCategory) product.mainCategory = mainCategory;
-    if (subCategory !== undefined) product.subCategory = subCategory;
+    if (categories !== undefined) {
+      try {
+        product.categories = typeof categories === 'string' ? JSON.parse(categories) : categories;
+      } catch (e) {
+        product.categories = Array.isArray(categories) ? categories : [];
+      }
+    }
     if (brand !== undefined) product.brand = brand;
     if (status) product.status = status;
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true' || isFeatured === true;

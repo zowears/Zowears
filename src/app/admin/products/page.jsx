@@ -32,8 +32,7 @@ export default function ProductsPage() {
 
   const [newProduct, setNewProduct] = useState({
     name: "",
-    mainCategory: "",
-    subCategory: "",
+    categories: [],
     fits: [],
     price: "",
     compareAt: "",
@@ -80,8 +79,7 @@ export default function ProductsPage() {
     setEditingProduct(null);
     setNewProduct({
       name: "",
-      mainCategory: "",
-      subCategory: "",
+      categories: [],
       fits: [],
       price: "",
       compareAt: "",
@@ -100,8 +98,7 @@ export default function ProductsPage() {
     setEditingProduct(product);
     setNewProduct({
       name: product.name || "",
-      mainCategory: product.mainCategory || "",
-      subCategory: product.subCategory || "",
+      categories: product.categories || [],
       fits: product.fits || [],
       price: product.price !== undefined ? String(product.price) : "",
       compareAt: product.compareAt || product.comparePrice ? String(product.compareAt || product.comparePrice) : "",
@@ -284,8 +281,7 @@ export default function ProductsPage() {
     e.preventDefault();
     const formData = new FormData();
     formData.append("name", newProduct.name);
-    formData.append("mainCategory", newProduct.mainCategory);
-    formData.append("subCategory", newProduct.subCategory);
+    formData.append("categories", JSON.stringify(newProduct.categories || []));
     formData.append("fits", JSON.stringify(newProduct.fits || []));
     formData.append("price", newProduct.price);
     formData.append("compareAt", newProduct.compareAt || "");
@@ -326,7 +322,7 @@ export default function ProductsPage() {
         <button 
           onClick={() => {
             setEditingProduct(null);
-            setNewProduct({ name: "", mainCategory: "", subCategory: "", fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
+            setNewProduct({ name: "", categories: [], fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
             setImageFiles([]);
             setExistingImages([]);
             setRemoveImages([]);
@@ -399,7 +395,7 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.mainCategory}{product.subCategory ? ` / ${product.subCategory}` : ''}</span>
+                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.categories?.join(" / ")}</span>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-white">{formatPrice(product.price)}</p>
@@ -471,50 +467,34 @@ export default function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Main Category</label>
-                  <select
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    value={newProduct.mainCategory}
-                    onChange={(e) => setNewProduct({ ...newProduct, mainCategory: e.target.value, subCategory: "", fits: [] })}
-                    required
-                  >
-                    <option value="">Select Main Category</option>
-                    <option value="Men's Wear">Men's Wear</option>
-                    <option value="Girls Wear">Girls Wear</option>
-                    <option value="Plain Tees">Plain Tees</option>
-                    <option value="Designs">Designs</option>
-                  </select>
+                <div className="col-span-2 space-y-2 mt-2 border border-zinc-800 p-3 rounded-lg bg-zinc-900/50">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Categories</label>
+                  <div className="flex flex-wrap gap-4">
+                    {[
+                      "T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", 
+                      "Denim Jackets", "Plain Tee & Hoodies", "Special for Girls", "Designs"
+                    ].map(cat => (
+                      <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.categories?.includes(cat)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewProduct({ ...newProduct, categories: [...(newProduct.categories || []), cat] });
+                            } else {
+                              setNewProduct({ ...newProduct, categories: (newProduct.categories || []).filter(c => c !== cat) });
+                            }
+                          }}
+                          className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
+                        />
+                        <span className="text-sm text-zinc-300">{cat}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                {(newProduct.mainCategory === "Men's Wear" || newProduct.mainCategory === "Girls Wear") && (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sub Category</label>
-                    <select
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                      value={newProduct.subCategory}
-                      onChange={(e) => setNewProduct({ ...newProduct, subCategory: e.target.value, fits: [] })}
-                      required={newProduct.mainCategory !== "Plain Tees" && newProduct.mainCategory !== "Designs"}
-                    >
-                      <option value="">Select Sub Category</option>
-                      {newProduct.mainCategory === "Men's Wear" && (
-                        <>
-                          <option value="T-shirts">T-shirts</option>
-                          <option value="Hoodies">Hoodies</option>
-                        </>
-                      )}
-                      {newProduct.mainCategory === "Girls Wear" && (
-                        <>
-                          <option value="Hoodies">Hoodies</option>
-                          <option value="Sweatshirts">Sweatshirts</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                )}
-
                 {/* Available Fits / Sub Category Options */}
-                {(newProduct.mainCategory === "Plain Tees" || newProduct.subCategory === "T-shirts" || newProduct.mainCategory === "Men's Wear" || newProduct.fits?.length > 0) && (
+                {!(newProduct.categories?.includes("Denim Jackets") && !["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts"].some(c => newProduct.categories?.includes(c))) && (
                   <div className="space-y-2 col-span-2 mt-2 p-3 border border-zinc-800 rounded-lg bg-zinc-900/50">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits / Styles</label>

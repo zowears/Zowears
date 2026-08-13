@@ -10,22 +10,14 @@ import { ProductCard } from "@/components/ProductCard";
 
 const sizes = ["M", "L", "XL"];
 
-const mainCats = [
-  { 
-    id: "Men's Wear", 
-    label: "Men's Wear", 
-    subs: [{ id: "T-shirts", label: "T-shirts" }, { id: "Hoodies", label: "Hoodies" }] 
-  },
-  { 
-    id: "Girls Wear", 
-    label: "Girls Wear", 
-    subs: [{ id: "Hoodies", label: "Hoodies" }, { id: "Sweatshirts", label: "Sweatshirts" }] 
-  },
-  { 
-    id: "Plain Tees", 
-    label: "Plain Tees", 
-    subs: [] 
-  },
+const filterCategories = [
+  "T-Shirts",
+  "Hoodies",
+  "Zipper Hoodies",
+  "Sweatshirts",
+  // "Denim Jackets",
+  "Special for Girls",
+  "Plain Tee & Hoodies"
 ];
 
 function ShopContent() {
@@ -39,8 +31,10 @@ function ShopContent() {
 
   const [grid, setGrid] = React.useState(true);
   const [drawer, setDrawer] = React.useState(false);
-  const [mainCat, setMainCat] = React.useState(searchParams.get("main") || undefined);
-  const [subCat, setSubCat] = React.useState(searchParams.get("sub") || undefined);
+  const [selectedCats, setSelectedCats] = React.useState(() => {
+    const initialC = searchParams.get("c");
+    return initialC ? [initialC] : [];
+  });
   const [price, setPrice] = React.useState(5000);
   const [size, setSize] = React.useState([]);
   const [sort, setSort] = React.useState("featured");
@@ -49,25 +43,33 @@ function ShopContent() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [mainCat, subCat, price, sort]);
+  }, [selectedCats, price, sort]);
 
   React.useEffect(() => {
-    setMainCat(searchParams.get("main") || undefined);
-    setSubCat(searchParams.get("sub") || undefined);
+    const c = searchParams.get("c");
+    if (c) {
+      setSelectedCats([c]);
+    } else if (!searchParams.has("c")) {
+      setSelectedCats([]);
+    }
   }, [searchParams]);
 
   const filtered = React.useMemo(() => {
     if (!products) return [];
     let list = [...products];
-    if (mainCat) list = list.filter((p) => p.mainCategory === mainCat);
-    if (subCat) list = list.filter((p) => p.subCategory === subCat);
+    if (selectedCats.length > 0) {
+      list = list.filter((p) => {
+        const pCats = p.categories || [];
+        return selectedCats.some(c => pCats.includes(c));
+      });
+    }
     list = list.filter((p) => p.price <= price);
     if (sort === "asc") list.sort((a, b) => a.price - b.price);
     else if (sort === "desc") list.sort((a, b) => b.price - a.price);
     else if (sort === "rating") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     else list.sort((a, b) => (b.views || 0) - (a.views || 0));
     return list;
-  }, [products, mainCat, subCat, price, sort]);
+  }, [products, selectedCats, price, sort]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginatedProducts = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
@@ -82,45 +84,22 @@ function ShopContent() {
         <ul className="space-y-4">
           <li>
             <button
-              onClick={() => { setMainCat(undefined); setSubCat(undefined); }}
-              className={`group flex w-full items-center justify-between text-sm transition-colors ${!mainCat ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setSelectedCats([])}
+              className={`group flex w-full items-center justify-between text-sm transition-colors ${selectedCats.length === 0 ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
             >
               All silhouettes
-              {!mainCat && <div className="h-1 w-1 rounded-full bg-accent-red" />}
+              {selectedCats.length === 0 && <div className="h-1 w-1 rounded-full bg-accent-red" />}
             </button>
           </li>
-          {mainCats.map((mc) => (
-            <li key={mc.id} className="space-y-2">
+          {filterCategories.map((cat) => (
+            <li key={cat} className="space-y-2">
               <button
-                onClick={() => {
-                  setMainCat(mc.id);
-                  setSubCat(undefined); // Reset subcat when maincat is clicked
-                }}
-                className={`group flex w-full items-center justify-between text-sm transition-colors ${mainCat === mc.id ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setSelectedCats([cat])}
+                className={`group flex w-full items-center justify-between text-sm transition-colors ${selectedCats.includes(cat) ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {mc.label}
-                {mainCat === mc.id && !subCat && <div className="h-1 w-1 rounded-full bg-accent-red" />}
+                {cat}
+                {selectedCats.includes(cat) && <div className="h-1 w-1 rounded-full bg-accent-red" />}
               </button>
-              
-              {/* Render Sub Categories if available and Main Category is active */}
-              {mainCat === mc.id && mc.subs.length > 0 && (
-                <ul className="pl-4 space-y-2 mt-2 border-l border-white/10">
-                  {mc.subs.map((sc) => (
-                    <li key={sc.id}>
-                      <button
-                        onClick={() => {
-                          setMainCat(mc.id);
-                          setSubCat(sc.id);
-                        }}
-                        className={`group flex w-full items-center justify-between text-xs transition-colors ${subCat === sc.id ? "text-foreground font-bold" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        {sc.label}
-                        {subCat === sc.id && <div className="h-1 w-1 rounded-full bg-accent-red" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </li>
           ))}
         </ul>
@@ -160,7 +139,7 @@ function ShopContent() {
           Collective · {filtered.length} items
         </div>
         <h1 className="mt-6 font-display text-6xl font-bold tracking-[-0.06em] md:text-9xl">
-          {subCat ? subCat : (mainCat ? mainCats.find((x) => x.id === mainCat)?.label : "All products")}
+          {selectedCats.length === 1 ? selectedCats[0] : (selectedCats.length > 1 ? "Filtered Collection" : "All products")}
         </h1>
       </motion.div>
 
@@ -226,7 +205,7 @@ function ShopContent() {
           {filtered.length === 0 && (
             <div className="py-32 text-center">
               <div className="font-display text-2xl text-muted-foreground">No matches found for this filter.</div>
-              <button onClick={() => { setMainCat(undefined); setSubCat(undefined); setPrice(5000); }} className="mt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red underline underline-offset-8">Clear all filters</button>
+              <button onClick={() => { setSelectedCats([]); setPrice(5000); }} className="mt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red underline underline-offset-8">Clear all filters</button>
             </div>
           )}
 

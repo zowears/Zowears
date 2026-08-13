@@ -18,8 +18,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
     name: "",
     sku: "",
     description: "",
-    mainCategory: "",
-    subCategory: "",
+    categories: [],
     fits: [],
     brand: "",
     status: "active",
@@ -73,8 +72,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
         name: product.name || "",
         sku: product.sku || "",
         description: product.description || "",
-        mainCategory: product.mainCategory || "",
-        subCategory: product.subCategory || "",
+        categories: product.categories || [],
         fits: product.fits || [],
         brand: product.brand || "",
         status: product.status || "active",
@@ -187,8 +185,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
       form.append("name", formData.name);
       form.append("sku", formData.sku);
       form.append("description", formData.description);
-      form.append("mainCategory", formData.mainCategory);
-      form.append("subCategory", formData.subCategory);
+      form.append("categories", JSON.stringify(formData.categories));
       form.append("fits", JSON.stringify(formData.fits));
       form.append("brand", formData.brand);
       form.append("status", formData.status);
@@ -290,57 +287,38 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
                 }
                 className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
-                value={formData.mainCategory}
-                onChange={(e) => {
-                  setFormData({ 
-                    ...formData, 
-                    mainCategory: e.target.value,
-                    subCategory: "", // reset subcategory on main change
-                    fits: [] 
-                  })
-                }}
-                className="col-span-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select Main Category</option>
-                <option value="Men's Wear">Men's Wear</option>
-                <option value="Girls Wear">Girls Wear</option>
-                <option value="Plain Tees">Plain Tees</option>
-                <option value="Designs">Designs</option>
-              </select>
+              <div className="col-span-2 space-y-2 mt-2 border p-3 rounded-lg bg-gray-50">
+                <label className="text-sm font-medium text-gray-700">Categories</label>
+                <div className="flex flex-wrap gap-4">
+                  {[
+                    "T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", 
+                    "Denim Jackets", "Plain Tee & Hoodies", "Special for Girls", "Designs"
+                  ].map(cat => (
+                    <label key={cat} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.categories.includes(cat)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ ...formData, categories: [...formData.categories, cat] });
+                          } else {
+                            setFormData({ ...formData, categories: formData.categories.filter(c => c !== cat) });
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-              {(formData.mainCategory === "Men's Wear" || formData.mainCategory === "Girls Wear") && (
-                <select
-                  value={formData.subCategory}
-                  onChange={(e) =>
-                    setFormData({ ...formData, subCategory: e.target.value, fits: [] })
-                  }
-                  className="col-span-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required={formData.mainCategory !== "Plain Tees" && formData.mainCategory !== "Designs"}
-                >
-                  <option value="">Select Sub Category</option>
-                  {formData.mainCategory === "Men's Wear" && (
-                    <>
-                      <option value="T-shirts">T-shirts</option>
-                      <option value="Hoodies">Hoodies</option>
-                    </>
-                  )}
-                  {formData.mainCategory === "Girls Wear" && (
-                    <>
-                      <option value="Hoodies">Hoodies</option>
-                      <option value="Sweatshirts">Sweatshirts</option>
-                    </>
-                  )}
-                </select>
-              )}
-
-              {/* Fit options for T-shirts */}
-              {(formData.mainCategory === "Plain Tees" || formData.subCategory === "T-shirts") && (
+              {/* Fit options */}
+              {!(formData.categories.includes("Denim Jackets") && !["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts"].some(c => formData.categories.includes(c))) && (
                 <div className="col-span-2 space-y-2 mt-2 border p-3 rounded-lg bg-gray-50">
-                  <label className="text-sm font-medium text-gray-700">Available Fits (T-shirts)</label>
+                  <label className="text-sm font-medium text-gray-700">Available Fits</label>
                   <div className="flex gap-4">
-                    {["Regular Fit", "Oversized"].map(fit => (
+                    {["Regular Fit", "Drop Shoulder", "Oversized"].map(fit => (
                       <label key={fit} className="flex items-center gap-2">
                         <input
                           type="checkbox"

@@ -56,7 +56,7 @@ export default function ProductPage() {
 
   const availableFits = (p?.fits?.length > 0)
     ? p.fits
-    : (p?.mainCategory === "Men's Wear" || p?.mainCategory === "Plain Tees" || p?.subCategory === "T-shirts" || p?.mainCategory?.toLowerCase().includes("men")
+    : (p?.categories?.some(c => ["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", "Plain Tee & Hoodies"].includes(c))
       ? ["Regular Fit", "Drop Shoulder", "Oversized"]
       : []);
 
@@ -127,10 +127,28 @@ export default function ProductPage() {
   return (
     <div className="mx-auto max-w-[1600px] px-4 pb-24 pt-24 md:px-8 md:pt-32">
       <div className="mb-10 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
-          <Link href="/shop" className="hover:text-accent-red">Collective</Link>
-          <span className="text-white/10">/</span>
-          <span className="text-foreground">{p.name}</span>
+        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground flex-wrap">
+          {p.categories?.includes("Special for Girls") ? (
+            <>
+              <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Girls Wear</Link>
+              <span className="text-white/10">/</span>
+              <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Special for Girls</Link>
+            </>
+          ) : (
+            <Link href="/shop" className="hover:text-accent-red">Shop All</Link>
+          )}
+          {p.categories?.filter(c => c !== "Special for Girls").map(cat => (
+            <React.Fragment key={cat}>
+              <span className="text-white/10">/</span>
+              <Link href={`/shop?c=${encodeURIComponent(cat)}`} className="hover:text-accent-red">{cat}</Link>
+            </React.Fragment>
+          ))}
+          {fit && (
+            <>
+              <span className="text-white/10">/</span>
+              <span className="text-foreground">{fit}</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -325,7 +343,7 @@ export default function ProductPage() {
                   name: p.name,
                   price: effectivePrice,
                   image: p.images?.[0]?.url || p.images?.[0] || p.image,
-                  category: p.category
+                  categories: p.categories
                 })}
               >
                 <span className="relative z-10 flex items-center justify-center gap-3">
