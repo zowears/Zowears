@@ -54,7 +54,8 @@ router.get('/kpis', auth, async (req, res) => {
         $expr: { $lte: ['$stock', '$lowStockThreshold'] },
         status: 'active'
       })
-        .select('name sku stock lowStockThreshold')
+        .sort({ stock: 1 })
+        .select('name stock lowStockThreshold')
         .limit(10)
         .lean(),
 

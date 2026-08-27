@@ -173,7 +173,6 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
   try {
     const {
       name,
-      sku,
       description,
       categories,
       brand,
@@ -246,7 +245,6 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
 
     const product = new Product({
       name,
-      sku,
       description,
       categories: parsedCategories,
       brand,
@@ -280,7 +278,6 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
   try {
     const {
       name,
-      sku,
       description,
       categories,
       brand,
@@ -307,7 +304,6 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
 
     // Update basic info
     if (name) product.name = name;
-    if (sku !== undefined) product.sku = sku;
     if (description !== undefined) product.description = description;
     if (categories !== undefined) {
       try {

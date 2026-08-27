@@ -16,7 +16,6 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
 
   const [formData, setFormData] = useState({
     name: "",
-    sku: "",
     description: "",
     categories: [],
     fits: [],
@@ -70,7 +69,6 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
     if (product) {
       setFormData({
         name: product.name || "",
-        sku: product.sku || "",
         description: product.description || "",
         categories: product.categories || [],
         fits: product.fits || [],
@@ -183,7 +181,6 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
       
       // Add form data
       form.append("name", formData.name);
-      form.append("sku", formData.sku);
       form.append("description", formData.description);
       form.append("categories", JSON.stringify(formData.categories));
       form.append("fits", JSON.stringify(formData.fits));
@@ -268,15 +265,6 @@ export default function ProductFormModal({ isOpen, onClose, product = null, onSu
                 }
                 className="col-span-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
-              />
-              <input
-                type="text"
-                placeholder="SKU"
-                value={formData.sku}
-                onChange={(e) =>
-                  setFormData({ ...formData, sku: e.target.value })
-                }
-                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"

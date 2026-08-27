@@ -51,6 +51,16 @@ export default function ProductPage() {
       fetch(`http://localhost:5000/api/analytics/product/${p.id}`, {
         method: "POST"
       }).catch(console.error);
+
+      if (typeof window !== "undefined" && window.fbq) {
+        window.fbq("track", "ViewContent", {
+          content_name: p.name,
+          content_ids: [p.id],
+          content_type: 'product',
+          value: p.price,
+          currency: 'PKR'
+        });
+      }
     }
   }, [p]);
 

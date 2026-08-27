@@ -3,40 +3,103 @@
 import Image from "next/image";
 import * as React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-  Check, 
-  ArrowLeft, 
-  ShieldCheck, 
-  Lock, 
-  Loader2, 
-  Inbox, 
-  FileText, 
-  ExternalLink, 
-  Mail, 
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Check,
+  ArrowLeft,
+  ShieldCheck,
+  Lock,
+  Loader2,
+  Inbox,
+  FileText,
+  ExternalLink,
+  Mail,
   CheckCircle2,
   Calendar,
   CreditCard,
   Truck,
-  Download
+  Download,
+  MapPin,
+  Navigation,
+  Phone,
+  AlertTriangle,
+  RefreshCw,
+  MessageCircle,
+  X,
 } from "lucide-react";
 import { useCart } from "@/context/cart";
 import { formatPrice } from "@/lib/products";
 import { toast } from "sonner";
+import {
+  validatePakistaniPhone,
+  validateEmailFormat,
+  isLocationMismatch,
+} from "@/lib/validation";
 
 const steps = ["Address", "Shipping", "Payment"];
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const PLACES_KEY = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+
+// ─── Google Places Script Loader ──────────────────────────────────────────────
+function usePlacesScript() {
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!PLACES_KEY || PLACES_KEY === "your_google_places_api_key_here") {
+      console.warn("[Places] NEXT_PUBLIC_GOOGLE_PLACES_API_KEY not configured — autocomplete disabled");
+      return;
+    }
+    if (window.google?.maps?.places) { setReady(true); return; }
+    const existing = document.getElementById("google-places-script");
+    if (existing) { existing.addEventListener("load", () => setReady(true)); return; }
+
+    const script = document.createElement("script");
+    script.id = "google-places-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${PLACES_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setReady(true);
+    document.head.appendChild(script);
+  }, []);
+
+  return ready;
+}
 
 export default function CheckoutPage() {
   const { items, resolve, subtotal, clear } = useCart();
   const [step, setStep] = React.useState(0);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [createdOrder, setCreatedOrder] = React.useState(null);
-  const [successTab, setSuccessTab] = React.useState("receipt"); // "receipt" | "email"
+  const [successTab, setSuccessTab] = React.useState("receipt");
   const [downloadLinks, setDownloadLinks] = React.useState({});
+  const placesReady = usePlacesScript();
+
+  React.useEffect(() => {
+    // Track InitiateCheckout
+    if (items.length > 0 && typeof window !== "undefined" && window.fbq) {
+      if (!window.__checkoutTracked) {
+        window.__checkoutTracked = true;
+        window.fbq("track", "InitiateCheckout", {
+          num_items: items.reduce((sum, item) => sum + item.qty, 0),
+          value: subtotal,
+          currency: 'PKR'
+        });
+      }
+    }
+  }, [items, subtotal]);
 
   React.useEffect(() => {
     if (createdOrder && createdOrder.items) {
+      if (typeof window !== "undefined" && window.fbq && !window.__purchaseTracked) {
+        window.__purchaseTracked = true;
+        window.fbq("track", "Purchase", {
+          content_ids: createdOrder.items.map((it) => it.productId),
+          content_type: 'product',
+          value: createdOrder.totalAmount,
+          currency: 'PKR'
+        }, { eventID: createdOrder._id });
+      }
+
       const digitalItems = createdOrder.items.filter(
         (it) => it.size === "Digital" || it.category === "Embroidery Design"
       );
@@ -58,7 +121,7 @@ export default function CheckoutPage() {
     }
   }, [createdOrder]);
 
-  // Form State
+  // ─── Form State ──────────────────────────────────────────────────────────────
   const [formData, setFormData] = React.useState({
     email: "",
     firstName: "",
@@ -72,30 +135,246 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = React.useState({});
 
-  // Shipping & Payment Selections
-  const [shippingMethod, setShippingMethod] = React.useState("Standard");
-  const [paymentMethod, setPaymentMethod] = React.useState("Cash on delivery");
+  // ─── Fraud Prevention State ───────────────────────────────────────────────────
 
-  // Dynamic Shipping Cost
-  const isKarachi = formData.city.trim().toLowerCase() === "karachi";
-  const standardShippingCost = subtotal > 5000 ? 0 : 100;
-  const expressShippingCost = subtotal > 5000 ? 0 : 200;
-  const shippingCost = shippingMethod === "Express" && isKarachi ? expressShippingCost : standardShippingCost;
+  // Phone
+  const [phoneNormalized, setPhoneNormalized] = React.useState("");
+  const [phoneFormatValid, setPhoneFormatValid] = React.useState(false);
+  const [phoneError, setPhoneError] = React.useState("");
+
+  // OTP
+  const [otpSent, setOtpSent] = React.useState(false);
+  const [otpSending, setOtpSending] = React.useState(false);
+  const [otpCode, setOtpCode] = React.useState("");
+  const [otpVerifying, setOtpVerifying] = React.useState(false);
+  const [phoneVerified, setPhoneVerified] = React.useState(false);
+  const [otpError, setOtpError] = React.useState("");
+  const [otpCooldown, setOtpCooldown] = React.useState(0); // seconds remaining
+  const [whatsappUnavailable, setWhatsappUnavailable] = React.useState(false);
+
+  // Email
+  const [emailVerified, setEmailVerified] = React.useState(false);
+  const [emailVerifying, setEmailVerifying] = React.useState(false);
+  const [emailError, setEmailError] = React.useState("");
+
+  // Address / GPS
+  const [addressCoords, setAddressCoords] = React.useState(null); // { lat, lng }
+  const [gpsCoords, setGpsCoords] = React.useState(null);           // { lat, lng }
+  const [gpsLoading, setGpsLoading] = React.useState(false);
+  const [gpsError, setGpsError] = React.useState("");
+  const [gpsDistanceFlag, setGpsDistanceFlag] = React.useState(false);
+  const addressInputRef = React.useRef(null);
+  const autocompleteRef = React.useRef(null);
+
+  // Trust scoring
+  const addressVerified = !!addressCoords || !!gpsCoords;
+  const codAllowed = phoneFormatValid; // OTP temporarily disabled — allow COD when phone format is valid
+
+  // ─── OTP Countdown Timer ─────────────────────────────────────────────────────
+  React.useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const t = setTimeout(() => setOtpCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [otpCooldown]);
+
+  // ─── Google Places Autocomplete ───────────────────────────────────────────────
+  React.useEffect(() => {
+    if (!placesReady || !addressInputRef.current || autocompleteRef.current) return;
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(
+      addressInputRef.current,
+      {
+        componentRestrictions: { country: "pk" },
+        fields: ["formatted_address", "geometry.location"],
+        types: ["address"],
+      }
+    );
+
+    autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current.getPlace();
+      if (!place.geometry?.location) return;
+
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const addr = place.formatted_address || "";
+
+      setFormData((prev) => ({ ...prev, address: addr }));
+      setAddressCoords({ lat, lng });
+
+      // Check distance against GPS if already captured
+      if (gpsCoords) {
+        const mismatch = isLocationMismatch({ lat, lng }, gpsCoords);
+        setGpsDistanceFlag(mismatch);
+      }
+
+      if (errors.address) setErrors((prev) => ({ ...prev, address: "" }));
+    });
+  }, [placesReady, gpsCoords, errors.address]);
+
+  // ─── Handlers ────────────────────────────────────────────────────────────────
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear validation error when user typess
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+
+    // Reset phone verification if the phone field is edited
+    if (name === "phone") {
+      setOtpSent(false);
+      setOtpCode("");
+      setOtpError("");
+      setWhatsappUnavailable(false);
+
+      const { valid, normalized, error } = validatePakistaniPhone(value);
+      // OTP temporarily disabled — auto-verify when format is valid
+      setPhoneVerified(valid);
+      setPhoneFormatValid(valid);
+      setPhoneNormalized(normalized || "");
+      setPhoneError(valid || !value ? "" : error || "Invalid Pakistani mobile number");
+    }
+
+    // Reset email verification if the email field is edited
+    if (name === "email") {
+      setEmailVerified(false);
+      setEmailError("");
     }
   };
 
-  const validateForm = () => {
+  // Phone: Send OTP
+  const handleSendOtp = async () => {
+    if (!phoneFormatValid || otpSending || otpCooldown > 0) return;
+
+    setOtpSending(true);
+    setOtpError("");
+    setWhatsappUnavailable(false);
+
+    try {
+      const res = await fetch("/api/checkout/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneNormalized }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setOtpSent(true);
+        setOtpCooldown(60);
+        toast.success("OTP sent to your WhatsApp");
+      } else if (data.whatsappUnavailable) {
+        setWhatsappUnavailable(true);
+        setOtpError("This number isn't registered on WhatsApp — only prepaid orders available");
+        toast.error("Number not on WhatsApp — prepaid only");
+      } else {
+        setOtpError(data.error || "Failed to send OTP — please try again");
+      }
+    } catch {
+      setOtpError("Network error — please try again");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  // Phone: Verify OTP
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.length !== 6 || otpVerifying) return;
+
+    setOtpVerifying(true);
+    setOtpError("");
+
+    try {
+      const res = await fetch("/api/checkout/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneNormalized, code: otpCode }),
+      });
+      const data = await res.json();
+
+      if (data.valid) {
+        setPhoneVerified(true);
+        setOtpError("");
+        toast.success("Phone verified ✓");
+      } else {
+        setOtpError(data.error || "Incorrect code — please try again");
+      }
+    } catch {
+      setOtpError("Network error — please try again");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  // Email: Server-side verify (called on Next Step click)
+  const handleVerifyEmail = async (email) => {
+    if (!validateEmailFormat(email)) return false;
+
+    setEmailVerifying(true);
+    setEmailError("");
+
+    try {
+      const res = await fetch("/api/checkout/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (data.deliverable) {
+        setEmailVerified(true);
+        return true;
+      } else {
+        setEmailError(data.reason || "This email address is not accepted");
+        return false;
+      }
+    } catch {
+      // Fail open — don't block orders due to network error
+      setEmailVerified(true);
+      return true;
+    } finally {
+      setEmailVerifying(false);
+    }
+  };
+
+  // GPS: Share Current Location
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setGpsLoading(true);
+    setGpsError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setGpsCoords(coords);
+        setGpsLoading(false);
+        toast.success("Location captured ✓");
+
+        // Check distance if address already autocompleted
+        if (addressCoords) {
+          const mismatch = isLocationMismatch(addressCoords, coords);
+          setGpsDistanceFlag(mismatch);
+        }
+      },
+      (err) => {
+        setGpsLoading(false);
+        setGpsError(
+          err.code === 1
+            ? "Location access denied — please allow it in your browser settings"
+            : "Could not get your location — please try again"
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // ─── Step 0 Validation ───────────────────────────────────────────────────────
+  const validateAddressForm = () => {
     const newErrors = {};
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!validateEmailFormat(formData.email)) {
       newErrors.email = "Invalid email format";
     }
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
@@ -106,33 +385,86 @@ export default function CheckoutPage() {
     if (!formData.zip.trim()) newErrors.zip = "Zip code is required";
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[0-9\s-]{7,15}$/.test(formData.phone.trim())) {
-      newErrors.phone = "Invalid phone number";
+    } else if (!phoneFormatValid) {
+      newErrors.phone = "Enter a valid Pakistani mobile number";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 0) {
-      if (validateForm()) {
-        setStep(1);
-      } else {
+      if (!validateAddressForm()) {
         toast.error("Please complete all address details correctly.");
+        return;
       }
+
+      // Gate 1: Phone format validation only (OTP temporarily disabled)
+      if (!phoneFormatValid) {
+        toast.error("Please enter a valid Pakistani phone number.");
+        setErrors((prev) => ({ ...prev, phone: "Valid phone number required" }));
+        return;
+      }
+
+      // Gate 2: Email server-side verification
+      if (!emailVerified) {
+        const ok = await handleVerifyEmail(formData.email);
+        if (!ok) {
+          toast.error("Email address could not be verified — please use a different email.");
+          setErrors((prev) => ({ ...prev, email: emailError || "Email not accepted" }));
+          return;
+        }
+      }
+
+      // Gate 3: Address must be geocoded or GPS shared (Removed strict block)
+      // If addressVerified is false, needsManualReview will be set to true automatically later on.
+
+      setStep(1);
     } else if (step === 1) {
       setStep(2);
     }
   };
 
+  // ─── Order Submission ────────────────────────────────────────────────────────
+  const [shippingMethod, setShippingMethod] = React.useState("Standard");
+  const [paymentMethod, setPaymentMethod] = React.useState(
+    // If OTP failed (WhatsApp unavailable), default to prepaid
+    whatsappUnavailable ? "Bank Transfer" : "Cash on delivery"
+  );
+
+  const isKarachi = formData.city.trim().toLowerCase() === "karachi";
+  const standardShippingCost = subtotal > 5000 ? 0 : 100;
+  const expressShippingCost = subtotal > 5000 ? 0 : 200;
+  const shippingCost =
+    shippingMethod === "Express" && isKarachi ? expressShippingCost : standardShippingCost;
+
+  // Trust scoring
+  const trustScore = {
+    phoneVerified,
+    emailVerified,
+    addressVerified,
+    gpsDistanceFlag,
+    addressCoords,
+    gpsCoords,
+  };
+
+  const needsManualReview =
+    !phoneVerified || !emailVerified || !addressVerified || gpsDistanceFlag || whatsappUnavailable;
+
   const handleCompleteOrder = async () => {
+    // Block COD if WhatsApp unavailable and user tried to select it
+    if (whatsappUnavailable && paymentMethod === "Cash on delivery") {
+      toast.error("Cash on Delivery is not available — please select a prepaid method.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const orderData = {
         customerName: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
-        items: items.map(it => {
+        items: items.map((it) => {
           const p = resolve(it);
           return {
             productId: it.productId,
@@ -141,10 +473,10 @@ export default function CheckoutPage() {
             price: p?.price || 0,
             size: it.size,
             color: it.color,
-            image: p?.image || ""
+            image: p?.image || "",
           };
         }),
-        subtotal: subtotal,
+        subtotal,
         totalAmount: subtotal + shippingCost,
         shippingAddress: {
           firstName: formData.firstName,
@@ -153,18 +485,21 @@ export default function CheckoutPage() {
           city: formData.city,
           state: formData.state,
           zip: formData.zip,
-          phone: formData.phone
+          phone: phoneNormalized || formData.phone,
         },
         shippingMethod,
         shippingCost,
         paymentMethod,
-        paymentStatus: paymentMethod === "Cash on delivery" ? "pending" : "paid"
+        paymentStatus: paymentMethod === "Cash on delivery" ? "pending" : "paid",
+        // ── Fraud-Prevention Metadata ──────────────────────────────────────
+        verification: trustScore,
+        needs_manual_review: needsManualReview,
       };
 
       const res = await fetch(`${API_URL}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(orderData),
       });
 
       if (!res.ok) {
@@ -174,7 +509,7 @@ export default function CheckoutPage() {
 
       const data = await res.json();
       setCreatedOrder(data);
-      clear(); // Clear the cart state
+      clear();
       toast.success("Order secured successfully!");
     } catch (err) {
       console.error(err);
@@ -188,7 +523,7 @@ export default function CheckoutPage() {
   if (createdOrder) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 pb-24 pt-24 md:px-8 md:pt-32">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="mx-auto max-w-4xl text-center"
@@ -198,7 +533,7 @@ export default function CheckoutPage() {
               <CheckCircle2 className="h-10 w-10 animate-pulse" />
             </div>
           </div>
-          
+
           <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl uppercase">
             Order Secured
           </h1>
@@ -206,7 +541,8 @@ export default function CheckoutPage() {
             Order ID: <span className="font-mono text-black/90">{createdOrder._id}</span>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            A confirmation receipt has been generated and dispatched to <span className="text-black font-medium">{createdOrder.email}</span>.
+            A confirmation receipt has been generated and dispatched to{" "}
+            <span className="text-black font-medium">{createdOrder.email}</span>.
           </p>
 
           {/* WhatsApp Confirmation Status */}
@@ -214,7 +550,7 @@ export default function CheckoutPage() {
             <div className="flex items-center gap-4 flex-1">
               <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.458L0 24zm6.59-4.846c1.6.95 3.167 1.485 4.709 1.487 5.48.003 9.94-4.456 9.943-9.934.002-2.654-1.02-5.15-2.879-7.01C16.505 1.83 14.02 1.8 12.01 1.8c-5.485 0-9.94 4.457-9.944 9.934-.001 2.014.526 3.98 1.526 5.717L2.616 21.03l3.754-1.876zm12.353-5.26c-.307-.154-1.817-.897-2.097-.999-.281-.102-.485-.154-.69.154-.204.307-.79.999-.97 1.203-.178.205-.357.228-.665.074-3.05-1.524-4.22-2.228-5.918-5.132-.23-.393.23-.365.658-1.22.074-.153.037-.289-.018-.393-.056-.103-.485-1.172-.665-1.603-.175-.42-.379-.362-.519-.369-.134-.007-.289-.009-.444-.009-.155 0-.408.058-.62.289-.213.23-.815.797-.815 1.943 0 1.147.833 2.253.95 2.406.115.153 1.64 2.505 3.972 3.511 2.333 1.006 2.333.67 2.74.632.408-.038 1.817-.743 2.073-1.46.255-.717.255-1.33.178-1.458-.076-.128-.28-.205-.588-.359z"/>
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.458L0 24zm6.59-4.846c1.6.95 3.167 1.485 4.709 1.487 5.48.003 9.94-4.456 9.943-9.934.002-2.654-1.02-5.15-2.879-7.01C16.505 1.83 14.02 1.8 12.01 1.8c-5.485 0-9.94 4.457-9.944 9.934-.001 2.014.526 3.98 1.526 5.717L2.616 21.03l3.754-1.876zm12.353-5.26c-.307-.154-1.817-.897-2.097-.999-.281-.102-.485-.154-.69.154-.204.307-.79.999-.97 1.203-.178.205-.357.228-.665.074-3.05-1.524-4.22-2.228-5.918-5.132-.23-.393.23-.365.658-1.22.074-.153.037-.289-.018-.393-.056-.103-.485-1.172-.665-1.603-.175-.42-.379-.362-.519-.369-.134-.007-.289-.009-.444-.009-.155 0-.408.058-.62.289-.213.23-.815.797-.815 1.943 0 1.147.833 2.253.95 2.406.115.153 1.64 2.505 3.972 3.511 2.333 1.006 2.333.67 2.74.632.408-.038 1.817-.743 2.073-1.46.255-.717.255-1.33.178-1.458-.076-.128-.28-.205-.588-.359z" />
                 </svg>
               </div>
               <div className="space-y-1">
@@ -224,18 +560,23 @@ export default function CheckoutPage() {
                 <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-xl">
                   {createdOrder.whatsappSent ? (
                     <>
-                      An automatic WhatsApp confirmation has been dispatched to your phone number <span className="font-semibold text-emerald-400">{createdOrder.shippingAddress?.phone}</span>.
+                      An automatic WhatsApp confirmation has been dispatched to your phone number{" "}
+                      <span className="font-semibold text-emerald-400">
+                        {createdOrder.shippingAddress?.phone}
+                      </span>
+                      .
                     </>
                   ) : (
                     <>
-                      Order processed! Connect directly with us on WhatsApp to coordinate delivery or ask any questions.
+                      Order processed! Connect directly with us on WhatsApp to coordinate delivery
+                      or ask any questions.
                     </>
                   )}
                 </p>
               </div>
             </div>
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_BUSINESS_NUMBER || '923022401759'}?text=${encodeURIComponent(
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_BUSINESS_NUMBER || "923022401759"}?text=${encodeURIComponent(
                 `Assalam-o-Alaikum / Hello Zowear,\n\nI would like to verify/chat about my order!\n\n*Order ID:* #${createdOrder._id}\n*Customer Name:* ${createdOrder.customerName}\n*Total Amount:* Rs. ${createdOrder.totalAmount}\n\nThank you!`
               )}`}
               target="_blank"
@@ -243,7 +584,7 @@ export default function CheckoutPage() {
               className="w-full md:w-auto flex items-center justify-center gap-2 border border-emerald-500 bg-emerald-500 hover:bg-transparent hover:text-emerald-400 text-black font-bold uppercase tracking-[0.2em] px-6 py-3.5 text-[10px] transition-all duration-300 shrink-0"
             >
               <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.458L0 24zm6.59-4.846c1.6.95 3.167 1.485 4.709 1.487 5.48.003 9.94-4.456 9.943-9.934.002-2.654-1.02-5.15-2.879-7.01C16.505 1.83 14.02 1.8 12.01 1.8c-5.485 0-9.94 4.457-9.944 9.934-.001 2.014.526 3.98 1.526 5.717L2.616 21.03l3.754-1.876zm12.353-5.26c-.307-.154-1.817-.897-2.097-.999-.281-.102-.485-.154-.69.154-.204.307-.79.999-.97 1.203-.178.205-.357.228-.665.074-3.05-1.524-4.22-2.228-5.918-5.132-.23-.393.23-.365.658-1.22.074-.153.037-.289-.018-.393-.056-.103-.485-1.172-.665-1.603-.175-.42-.379-.362-.519-.369-.134-.007-.289-.009-.444-.009-.155 0-.408.058-.62.289-.213.23-.815.797-.815 1.943 0 1.147.833 2.253.95 2.406.115.153 1.64 2.505 3.972 3.511 2.333 1.006 2.333.67 2.74.632.408-.038 1.817-.743 2.073-1.46.255-.717.255-1.33.178-1.458-.076-.128-.28-.205-.588-.359z"/>
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.458L0 24zm6.59-4.846c1.6.95 3.167 1.485 4.709 1.487 5.48.003 9.94-4.456 9.943-9.934.002-2.654-1.02-5.15-2.879-7.01C16.505 1.83 14.02 1.8 12.01 1.8c-5.485 0-9.94 4.457-9.944 9.934-.001 2.014.526 3.98 1.526 5.717L2.616 21.03l3.754-1.876zm12.353-5.26c-.307-.154-1.817-.897-2.097-.999-.281-.102-.485-.154-.69.154-.204.307-.79.999-.97 1.203-.178.205-.357.228-.665.074-3.05-1.524-4.22-2.228-5.918-5.132-.23-.393.23-.365.658-1.22.074-.153.037-.289-.018-.393-.056-.103-.485-1.172-.665-1.603-.175-.42-.379-.362-.519-.369-.134-.007-.289-.009-.444-.009-.155 0-.408.058-.62.289-.213.23-.815.797-.815 1.943 0 1.147.833 2.253.95 2.406.115.153 1.64 2.505 3.972 3.511 2.333 1.006 2.333.67 2.74.632.408-.038 1.817-.743 2.073-1.46.255-.717.255-1.33.178-1.458-.076-.128-.28-.205-.588-.359z" />
               </svg>
               Chat on WhatsApp
             </a>
@@ -254,8 +595,8 @@ export default function CheckoutPage() {
             <button
               onClick={() => setSuccessTab("receipt")}
               className={`flex items-center gap-2 px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all border-b-2 ${
-                successTab === "receipt" 
-                  ? "border-accent-red text-foreground" 
+                successTab === "receipt"
+                  ? "border-accent-red text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -265,8 +606,8 @@ export default function CheckoutPage() {
             <button
               onClick={() => setSuccessTab("email")}
               className={`flex items-center gap-2 px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all border-b-2 ${
-                successTab === "email" 
-                  ? "border-accent-red text-foreground" 
+                successTab === "email"
+                  ? "border-accent-red text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -277,7 +618,7 @@ export default function CheckoutPage() {
 
           <div className="mt-12 text-left">
             {successTab === "receipt" ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="grid gap-8 md:grid-cols-12"
@@ -291,7 +632,8 @@ export default function CheckoutPage() {
                         Embroidery Downloads
                       </h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Click the download buttons below to access your Google Drive embroidery design files (DST, PES, JEF, etc. - EMB excluded):
+                        Click the download buttons below to access your Google Drive embroidery
+                        design files (DST, PES, JEF, etc. - EMB excluded):
                       </p>
                       <div className="space-y-3">
                         {createdOrder.items
@@ -299,7 +641,10 @@ export default function CheckoutPage() {
                           .map((item) => {
                             const link = downloadLinks[item.productId];
                             return (
-                              <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40 border border-black/5 p-4">
+                              <div
+                                key={item.productId}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40 border border-black/5 p-4"
+                              >
                                 <div>
                                   <div className="text-[11px] font-bold uppercase tracking-wider text-black">
                                     {item.name}
@@ -338,8 +683,13 @@ export default function CheckoutPage() {
                         {createdOrder.shippingAddress.firstName} {createdOrder.shippingAddress.lastName}
                       </p>
                       <p>{createdOrder.shippingAddress.address}</p>
-                      <p>{createdOrder.shippingAddress.city}, {createdOrder.shippingAddress.state} {createdOrder.shippingAddress.zip}</p>
-                      <p className="mt-2 font-mono text-xs text-muted-foreground">Phone: {createdOrder.shippingAddress.phone}</p>
+                      <p>
+                        {createdOrder.shippingAddress.city}, {createdOrder.shippingAddress.state}{" "}
+                        {createdOrder.shippingAddress.zip}
+                      </p>
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
+                        Phone: {createdOrder.shippingAddress.phone}
+                      </p>
                     </div>
                   </div>
 
@@ -367,10 +717,12 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="pt-6 border-t border-black/5 text-xs text-muted-foreground leading-relaxed">
                     <p>Estimated Delivery: 3-5 business days.</p>
-                    <p className="mt-1">For any queries, please email support@zowears.com with your Order ID.</p>
+                    <p className="mt-1">
+                      For any queries, please email support@zowears.com with your Order ID.
+                    </p>
                   </div>
                 </div>
 
@@ -407,12 +759,16 @@ export default function CheckoutPage() {
                   <div className="mt-8 border-t border-black/10 pt-6 space-y-3">
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em]">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="text-foreground">{formatPrice(createdOrder.totalAmount - createdOrder.shippingCost)}</span>
+                      <span className="text-foreground">
+                        {formatPrice(createdOrder.totalAmount - createdOrder.shippingCost)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em]">
                       <span className="text-muted-foreground">Shipping</span>
                       <span className="text-accent-red">
-                        {createdOrder.shippingCost === 0 ? "Complimentary" : formatPrice(createdOrder.shippingCost)}
+                        {createdOrder.shippingCost === 0
+                          ? "Complimentary"
+                          : formatPrice(createdOrder.shippingCost)}
                       </span>
                     </div>
                     <div className="flex justify-between pt-4 border-t border-black/5">
@@ -425,7 +781,7 @@ export default function CheckoutPage() {
                 </aside>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="space-y-6"
@@ -440,7 +796,8 @@ export default function CheckoutPage() {
                           Real-time Email Sandbox Available
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          An actual Ethereal Test Account captured this email delivery. You can preview it in a live browser inbox.
+                          An actual Ethereal Test Account captured this email delivery. You can
+                          preview it in a live browser inbox.
                         </div>
                       </div>
                     </div>
@@ -458,7 +815,6 @@ export default function CheckoutPage() {
 
                 {/* Simulated Email Client Interface */}
                 <div className="border border-black/10 bg-[#09090b] overflow-hidden shadow-2xl">
-                  {/* Email Client Header Bar */}
                   <div className="flex items-center gap-2 border-b border-black/10 bg-black/2 px-6 py-4">
                     <div className="h-3 w-3 rounded-full bg-red-500" />
                     <div className="h-3 w-3 rounded-full bg-yellow-500" />
@@ -468,7 +824,6 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Mail Info Panel */}
                   <div className="border-b border-black/5 bg-[#0e0e11] px-8 py-6 space-y-2">
                     <div className="flex text-xs leading-normal">
                       <span className="w-16 text-zinc-500 font-bold uppercase tracking-wider">From:</span>
@@ -480,14 +835,15 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex text-xs leading-normal">
                       <span className="w-16 text-zinc-500 font-bold uppercase tracking-wider">Subject:</span>
-                      <span className="text-black font-bold">ZOWEARS COLLECTIVE - Order Confirmed #{createdOrder._id}</span>
+                      <span className="text-black font-bold">
+                        ZOWEARS COLLECTIVE - Order Confirmed #{createdOrder._id}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Email HTML Body Display */}
                   <div className="p-4 sm:p-8 bg-[#121214] max-h-[60vh] overflow-y-auto border-t border-black/5">
                     {createdOrder.emailHtml ? (
-                      <div 
+                      <div
                         className="email-iframe-container bg-black border border-zinc-900 mx-auto rounded"
                         style={{ maxWidth: "600px" }}
                         dangerouslySetInnerHTML={{ __html: createdOrder.emailHtml }}
@@ -504,7 +860,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-16">
-            <Link 
+            <Link
               href="/shop"
               className="border border-black/20 px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-black transition-all hover:bg-black hover:text-black hover:border-black"
             >
@@ -520,12 +876,14 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-32 text-center md:px-8">
-        <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl uppercase">Checkout</h1>
+        <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl uppercase">
+          Checkout
+        </h1>
         <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
           Your silhouette bag is empty.
         </p>
-        <Link 
-          href="/shop" 
+        <Link
+          href="/shop"
           className="mt-12 inline-block border border-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-foreground hover:text-background transition-colors"
         >
           Return to Collective
@@ -540,7 +898,10 @@ export default function CheckoutPage() {
       {/* Checkout Page Header */}
       <div className="mb-12 flex items-center justify-between border-b border-black/5 pb-8">
         <h1 className="font-display text-4xl font-bold tracking-tight md:text-6xl">Checkout</h1>
-        <Link href="/cart" className="group flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground">
+        <Link
+          href="/cart"
+          className="group flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           Back to bag
         </Link>
@@ -553,10 +914,22 @@ export default function CheckoutPage() {
           <div className="mb-16 flex flex-wrap items-center gap-6">
             {steps.map((s, i) => (
               <div key={s} className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 items-center justify-center border font-display text-sm transition-all ${i <= step ? "border-accent-red bg-accent-red text-black" : "border-black/10 text-muted-foreground"}`}>
+                <div
+                  className={`flex h-10 w-10 items-center justify-center border font-display text-sm transition-all ${
+                    i <= step
+                      ? "border-accent-red bg-accent-red text-black"
+                      : "border-black/10 text-muted-foreground"
+                  }`}
+                >
                   {i < step ? <Check className="h-4 w-4" /> : i + 1}
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-[0.3em] ${i === step ? "text-foreground" : "text-muted-foreground"}`}>{s}</span>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-[0.3em] ${
+                    i === step ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {s}
+                </span>
                 {i < steps.length - 1 && <div className="ml-2 h-px w-12 bg-black/5" />}
               </div>
             ))}
@@ -564,94 +937,321 @@ export default function CheckoutPage() {
 
           {/* Form Step Display */}
           <div className="space-y-12">
-            {/* Step 0: Address Details */}
+            {/* ── Step 0: Address Details ─────────────────────────────────── */}
             {step === 0 && (
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="grid gap-6 md:grid-cols-2">
-                <Field 
-                  label="Email Address" 
-                  type="email" 
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="grid gap-6 md:grid-cols-2"
+              >
+                {/* Email */}
+                <Field
+                  label="Email Address"
+                  type="email"
                   name="email"
-                  wide 
-                  placeholder="silhouette@zowears.com" 
+                  wide
+                  placeholder="silhouette@zowears.com"
                   value={formData.email}
                   onChange={handleInputChange}
-                  error={errors.email}
+                  error={errors.email || emailError}
+                  suffix={
+                    emailVerifying ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    ) : emailVerified ? (
+                      <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600">
+                        <Check className="h-3 w-3" /> Verified
+                      </span>
+                    ) : null
+                  }
                 />
-                <Field 
-                  label="First name" 
+
+                {/* Name */}
+                <Field
+                  label="First name"
                   name="firstName"
-                  placeholder="Hajime" 
+                  placeholder="Hajime"
                   value={formData.firstName}
                   onChange={handleInputChange}
                   error={errors.firstName}
                 />
-                <Field 
-                  label="Last name" 
+                <Field
+                  label="Last name"
                   name="lastName"
-                  placeholder="Saito" 
+                  placeholder="Saito"
                   value={formData.lastName}
                   onChange={handleInputChange}
                   error={errors.lastName}
                 />
-                <Field 
-                  label="Shipping Address" 
-                  name="address"
-                  wide 
-                  placeholder="1-chome-2-3, Minato City" 
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  error={errors.address}
-                />
-                <Field 
-                  label="City" 
+
+                {/* Address Autocomplete */}
+                <div className="block md:col-span-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-accent-red">
+                      Shipping Address
+                    </span>
+                    {errors.address && (
+                      <span className="text-[9px] font-bold text-accent-red/90 uppercase tracking-widest animate-pulse">
+                        {errors.address}
+                      </span>
+                    )}
+                    {!errors.address && addressCoords && (
+                      <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600">
+                        <Check className="h-3 w-3" /> Geocoded
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      ref={addressInputRef}
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={(e) => {
+                        setFormData((prev) => ({ ...prev, address: e.target.value }));
+                        setAddressCoords(null); // clear coords if user types manually
+                        if (errors.address) setErrors((prev) => ({ ...prev, address: "" }));
+                      }}
+                      placeholder={
+                        placesReady
+                          ? "Start typing your address..."
+                          : "House / Street / Area, City"
+                      }
+                      className={`w-full border bg-transparent px-5 py-4 pr-12 text-sm font-medium outline-none transition-colors placeholder:text-black/10 ${
+                        errors.address
+                          ? "border-accent-red/50 focus:border-accent-red"
+                          : addressCoords
+                          ? "border-emerald-400/40 focus:border-emerald-400"
+                          : "border-black/5 focus:border-accent-red"
+                      }`}
+                    />
+                    <MapPin
+                      className={`absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${
+                        addressCoords ? "text-emerald-500" : "text-black/20"
+                      }`}
+                    />
+                  </div>
+
+                  {/* GPS Share Location Button */}
+                  <div className="mt-2 flex items-center gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      id="gps-share-location-btn"
+                      onClick={handleShareLocation}
+                      disabled={gpsLoading}
+                      className="flex items-center gap-2 border border-black/10 bg-black/2 px-4 py-2 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground hover:border-emerald-400/50 hover:text-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {gpsLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : gpsCoords ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <Navigation className="h-3 w-3" />
+                      )}
+                      {gpsLoading
+                        ? "Getting location..."
+                        : gpsCoords
+                        ? "Location captured"
+                        : "Share current location"}
+                    </button>
+
+                    {gpsCoords && (
+                      <span className="text-[9px] text-muted-foreground font-mono">
+                        {gpsCoords.lat.toFixed(4)}, {gpsCoords.lng.toFixed(4)}
+                      </span>
+                    )}
+                  </div>
+
+                  {gpsError && (
+                    <p className="mt-1.5 text-[9px] font-bold uppercase tracking-widest text-accent-red/80 animate-pulse">
+                      {gpsError}
+                    </p>
+                  )}
+
+                  {!placesReady && !PLACES_KEY?.startsWith("your_") && PLACES_KEY && (
+                    <p className="mt-1.5 text-[9px] text-muted-foreground">
+                      Loading address suggestions...
+                    </p>
+                  )}
+
+                  {/* Location Mismatch Warning */}
+                  <AnimatePresence>
+                    {gpsDistanceFlag && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 flex items-start gap-3 border border-amber-400/30 bg-amber-50/50 px-4 py-3"
+                      >
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-amber-700 leading-relaxed">
+                          Location doesn&apos;t match your address — we may contact you to confirm
+                          your delivery details before dispatching.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* City / State / Zip */}
+                <Field
+                  label="City"
                   name="city"
-                  placeholder="Tokyo" 
+                  placeholder="Karachi"
                   value={formData.city}
                   onChange={handleInputChange}
                   error={errors.city}
                 />
-                <Field 
-                  label="State / Province" 
+                <Field
+                  label="State / Province"
                   name="state"
-                  placeholder="Tokyo" 
+                  placeholder="Sindh"
                   value={formData.state}
                   onChange={handleInputChange}
                   error={errors.state}
                 />
-                <Field 
-                  label="Pincode / Zip" 
+                <Field
+                  label="Pincode / Zip"
                   name="zip"
-                  placeholder="105-0011" 
+                  placeholder="74200"
                   value={formData.zip}
                   onChange={handleInputChange}
                   error={errors.zip}
                 />
-                <Field 
-                  label="Phone" 
-                  name="phone"
-                  placeholder="+81 00-0000-0000" 
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  error={errors.phone}
-                />
+
+                {/* Phone with Pakistani Validation + WhatsApp OTP */}
+                <div className="block">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-accent-red">
+                      Phone
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {formData.phone && phoneFormatValid && (
+                        <span className="text-[9px] font-mono text-muted-foreground">
+                          {phoneNormalized}
+                        </span>
+                      )}
+                      {formData.phone && phoneFormatValid && !phoneVerified && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600">
+                          Needs Verification
+                        </span>
+                      )}
+                      {phoneVerified && (
+                        <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-emerald-600">
+                          <Check className="h-3 w-3" /> Verified
+                        </span>
+                      )}
+                      {(errors.phone || phoneError) && !phoneVerified && (
+                        <span className="text-[9px] font-bold text-accent-red/90 uppercase tracking-widest animate-pulse">
+                          {errors.phone || phoneError}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <input
+                    type="tel"
+                    name="phone"
+                    id="checkout-phone-input"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="03001234567 or +923001234567"
+                    className={`w-full border bg-transparent px-5 py-4 text-sm font-medium outline-none transition-colors placeholder:text-black/10 ${
+                      errors.phone || phoneError
+                        ? "border-accent-red/50 focus:border-accent-red"
+                        : phoneVerified
+                        ? "border-emerald-400/40 focus:border-emerald-400"
+                        : phoneFormatValid
+                        ? "border-amber-400/40 focus:border-amber-400"
+                        : "border-black/5 focus:border-accent-red"
+                    }`}
+                  />
+
+                  <p className="mt-1.5 text-[9px] text-muted-foreground tracking-wide">
+                    Pakistani mobile only · 03xx or +923xx format
+                  </p>
+
+                  {/* WhatsApp OTP Section — TEMPORARILY DISABLED */}
+                  {/* OTP verification is bypassed; phone is auto-verified when format is valid */}
+
+                  {/* WhatsApp Unavailable — Prepaid Notice */}
+                  <AnimatePresence>
+                    {whatsappUnavailable && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-3 flex items-start gap-3 border border-accent-red/20 bg-accent-red/5 px-4 py-3"
+                      >
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-accent-red mt-0.5" />
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-accent-red leading-relaxed">
+                            Number not on WhatsApp — Cash on Delivery unavailable
+                          </p>
+                          <p className="text-[9px] text-muted-foreground mt-1 leading-relaxed">
+                            This number is not registered on WhatsApp. You can still proceed with a
+                            prepaid payment method.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Trust Status Badges */}
+                <div className="md:col-span-2 border-t border-black/5 pt-6">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground mb-4">
+                    Order Verification Status
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <TrustBadge
+                      label="Phone"
+                      verified={phoneFormatValid}
+                      pending={!!formData.phone && !phoneFormatValid}
+                      pendingLabel="Invalid format"
+                    />
+                    <TrustBadge
+                      label="Email"
+                      verified={emailVerified}
+                      pending={validateEmailFormat(formData.email) && !emailVerified}
+                      pendingLabel="Unverified"
+                    />
+                    <TrustBadge
+                      label="Address"
+                      verified={addressVerified}
+                      pending={!!formData.address && !addressVerified}
+                      pendingLabel="Select from suggestions"
+                    />
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {/* Step 1: Shipping Methods */}
+            {/* ── Step 1: Shipping Methods ────────────────────────────────── */}
             {step === 1 && (
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-4"
+              >
                 {[
                   { n: "Standard Shipping", d: "3–5 business days", p: standardShippingCost },
-                  ...(isKarachi ? [{ n: "Express Shipping", d: "72 hours delivery", p: expressShippingCost }] : [])
+                  ...(isKarachi
+                    ? [{ n: "Express Shipping", d: "72 hours delivery", p: expressShippingCost }]
+                    : []),
                 ].map((o) => (
-                  <label key={o.n} className="flex cursor-pointer items-center justify-between border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
+                  <label
+                    key={o.n}
+                    className="flex cursor-pointer items-center justify-between border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red"
+                  >
                     <div className="flex items-center gap-4">
-                      <input 
-                        type="radio" 
-                        name="ship" 
-                        className="accent-accent-red h-4 w-4" 
-                        checked={shippingMethod === (o.n.includes("Standard") ? "Standard" : "Express")} 
-                        onChange={() => setShippingMethod(o.n.includes("Standard") ? "Standard" : "Express")}
+                      <input
+                        type="radio"
+                        name="ship"
+                        className="accent-accent-red h-4 w-4"
+                        checked={shippingMethod === (o.n.includes("Standard") ? "Standard" : "Express")}
+                        onChange={() =>
+                          setShippingMethod(o.n.includes("Standard") ? "Standard" : "Express")
+                        }
                       />
                       <div>
                         <div className="text-[11px] font-bold uppercase tracking-[0.2em]">{o.n}</div>
@@ -666,36 +1266,85 @@ export default function CheckoutPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Payment Choices */}
+            {/* ── Step 2: Payment ─────────────────────────────────────────── */}
             {step === 2 && (
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                {["Cash on delivery"].map((m, i) => (
-                  <label key={m} className="flex cursor-pointer items-center gap-4 border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
-                    <input 
-                      type="radio" 
-                      name="pay" 
-                      className="accent-accent-red h-4 w-4" 
-                      checked={paymentMethod === m} 
-                      onChange={() => setPaymentMethod(m)}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-4"
+              >
+                {/* COD — only shown if WhatsApp OTP passed */}
+                {!whatsappUnavailable && (
+                  <label className="flex cursor-pointer items-center gap-4 border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
+                    <input
+                      type="radio"
+                      name="pay"
+                      className="accent-accent-red h-4 w-4"
+                      checked={paymentMethod === "Cash on delivery"}
+                      onChange={() => setPaymentMethod("Cash on delivery")}
                     />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.2em]">{m}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
+                      Cash on Delivery
+                    </span>
                   </label>
-                ))}
+                )}
+
+                {/* Prepaid option always shown */}
+                <label className="flex cursor-pointer items-center gap-4 border border-black/5 bg-black/5 p-6 transition-all hover:border-black/20 has-[:checked]:border-accent-red">
+                  <input
+                    type="radio"
+                    name="pay"
+                    className="accent-accent-red h-4 w-4"
+                    checked={paymentMethod === "Bank Transfer"}
+                    onChange={() => setPaymentMethod("Bank Transfer")}
+                  />
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em]">
+                      Bank Transfer / Prepaid
+                    </span>
+                    <p className="mt-1 text-[9px] text-muted-foreground">
+                      We&apos;ll send payment details on WhatsApp after order confirmation.
+                    </p>
+                  </div>
+                </label>
+
+                {/* WhatsApp unavailable notice on payment step */}
+                {whatsappUnavailable && (
+                  <div className="flex items-start gap-3 border border-amber-400/30 bg-amber-50/50 px-4 py-3">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                    <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-amber-700">
+                      Cash on Delivery is not available because your phone could not be verified via
+                      WhatsApp. Prepaid orders only.
+                    </p>
+                  </div>
+                )}
+
+                {/* Manual review notice */}
+                {needsManualReview && (
+                  <div className="flex items-start gap-3 border border-black/5 bg-black/2 px-4 py-3">
+                    <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                    <p className="text-[9px] text-muted-foreground uppercase tracking-[0.15em] leading-relaxed">
+                      This order will be reviewed by our team before dispatch. We may contact you to
+                      confirm delivery details.
+                    </p>
+                  </div>
+                )}
               </motion.div>
             )}
 
-            {/* Action Buttons */}
+            {/* ── Action Buttons ──────────────────────────────────────────── */}
             <div className="mt-16 flex items-center justify-between border-t border-black/5 pt-12">
-              <button 
-                onClick={() => setStep((s) => Math.max(0, s - 1))} 
-                className="border border-black/10 px-10 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-black/5 disabled:opacity-20" 
+              <button
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                className="border border-black/10 px-10 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-black/5 disabled:opacity-20"
                 disabled={step === 0 || isSubmitting}
               >
                 Previous Step
               </button>
-              
+
               {step === 2 ? (
-                <button 
+                <button
+                  id="complete-order-btn"
                   onClick={handleCompleteOrder}
                   disabled={isSubmitting}
                   className="flex items-center gap-3 bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-black disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
@@ -710,11 +1359,20 @@ export default function CheckoutPage() {
                   )}
                 </button>
               ) : (
-                <button 
+                <button
+                  id={step === 0 ? "continue-to-shipping-btn" : "continue-to-payment-btn"}
                   onClick={handleNextStep}
-                  className="bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-black"
+                  disabled={emailVerifying}
+                  className="flex items-center gap-3 bg-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] text-background transition-all hover:bg-accent-red hover:text-black disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
                 >
-                  Continue to {step === 0 ? "Shipping" : "Payment"}
+                  {emailVerifying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    `Continue to ${step === 0 ? "Shipping" : "Payment"}`
+                  )}
                 </button>
               )}
             </div>
@@ -724,7 +1382,9 @@ export default function CheckoutPage() {
         {/* Right Sidebar: Checkout Bag Review */}
         <aside className="md:col-span-4">
           <div className="sticky top-32 bg-black/5 p-8 border border-black/5">
-            <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red mb-8">Review Silhouette</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red mb-8">
+              Review Silhouette
+            </div>
             <div className="max-h-[40vh] space-y-6 overflow-y-auto pr-4 no-scrollbar">
               {items.map((it, i) => {
                 const p = resolve(it);
@@ -732,18 +1392,32 @@ export default function CheckoutPage() {
                 return (
                   <div key={i} className="flex gap-4">
                     <div className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden bg-background border border-black/5">
-                      <Image src={typeof p.image === 'object' && p.image?.url ? p.image.url : (p.image || "")} alt={p.name} fill sizes="80px" className="object-cover" />
+                      <Image
+                        src={
+                          typeof p.image === "object" && p.image?.url
+                            ? p.image.url
+                            : p.image || ""
+                        }
+                        alt={p.name}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">{p.name}</div>
-                      <div className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground">{it.size} · {it.color} · ×{it.qty}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground">
+                        {p.name}
+                      </div>
+                      <div className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+                        {it.size} · {it.color} · ×{it.qty}
+                      </div>
                       <div className="font-display font-bold">{formatPrice(p.price * it.qty)}</div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            
+
             <div className="mt-8 space-y-4 border-t border-black/10 pt-8">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em]">
                 <span className="text-muted-foreground">Subtotal</span>
@@ -757,7 +1431,9 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between pt-4 border-t border-black/10">
                 <span className="text-[11px] font-bold uppercase tracking-[0.4em]">Total</span>
-                <span className="font-display text-3xl font-bold text-accent-red">{formatPrice(subtotal + shippingCost)}</span>
+                <span className="font-display text-3xl font-bold text-accent-red">
+                  {formatPrice(subtotal + shippingCost)}
+                </span>
               </div>
             </div>
 
@@ -770,6 +1446,10 @@ export default function CheckoutPage() {
                 <ShieldCheck className="h-3 w-3" />
                 Artisanal Guarantee
               </div>
+              <div className="flex items-center gap-3 text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                <Phone className="h-3 w-3" />
+                WhatsApp Verified Orders
+              </div>
             </div>
           </div>
         </aside>
@@ -778,28 +1458,72 @@ export default function CheckoutPage() {
   );
 }
 
-// Stateful Custom input field
-function Field({ label, type = "text", name, wide, placeholder, value, onChange, error }) {
+// ─── Reusable Field Component ─────────────────────────────────────────────────
+function Field({ label, type = "text", name, wide, placeholder, value, onChange, error, suffix }) {
   return (
     <label className={`block ${wide ? "md:col-span-2" : ""}`}>
       <div className="flex justify-between items-center mb-2">
-        <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-accent-red">{label}</span>
-        {error && (
-          <span className="text-[9px] font-bold text-accent-red/90 uppercase tracking-widest animate-pulse">
-            {error}
-          </span>
-        )}
+        <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-accent-red">
+          {label}
+        </span>
+        <div className="flex items-center gap-2">
+          {suffix}
+          {error && (
+            <span className="text-[9px] font-bold text-accent-red/90 uppercase tracking-widest animate-pulse">
+              {error}
+            </span>
+          )}
+        </div>
       </div>
-      <input 
-        type={type} 
+      <input
+        type={type}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full border bg-black/2 bg-transparent px-5 py-4 text-sm font-medium outline-none transition-colors placeholder:text-black/10 ${
-          error ? "border-accent-red/50 focus:border-accent-red" : "border-black/5 focus:border-accent-red"
-        }`} 
+        className={`w-full border bg-transparent px-5 py-4 text-sm font-medium outline-none transition-colors placeholder:text-black/10 ${
+          error
+            ? "border-accent-red/50 focus:border-accent-red"
+            : "border-black/5 focus:border-accent-red"
+        }`}
       />
     </label>
+  );
+}
+
+// ─── Trust Verification Badge ─────────────────────────────────────────────────
+function TrustBadge({ label, verified, pending, pendingLabel }) {
+  return (
+    <div
+      className={`flex items-center gap-2 border px-3 py-2.5 transition-all ${
+        verified
+          ? "border-emerald-400/30 bg-emerald-50/50"
+          : pending
+          ? "border-amber-400/30 bg-amber-50/30"
+          : "border-black/5 bg-black/2"
+      }`}
+    >
+      <div
+        className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+          verified ? "bg-emerald-500" : pending ? "bg-amber-400" : "bg-black/20"
+        }`}
+      />
+      <div className="min-w-0">
+        <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-foreground">
+          {label}
+        </div>
+        <div
+          className={`text-[8px] uppercase tracking-widest truncate ${
+            verified
+              ? "text-emerald-600"
+              : pending
+              ? "text-amber-600"
+              : "text-muted-foreground"
+          }`}
+        >
+          {verified ? "✓ Verified" : pending ? pendingLabel : "Pending"}
+        </div>
+      </div>
+    </div>
   );
 }

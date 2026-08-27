@@ -10,6 +10,17 @@ export function CartProvider({ children }) {
   const [open, setOpen] = React.useState(false);
 
   const add = React.useCallback((item) => {
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "AddToCart", {
+        content_name: item.name,
+        content_ids: [item.productId],
+        content_type: 'product',
+        value: item.price || 0,
+        currency: 'PKR',
+        quantity: item.qty || 1
+      });
+    }
+
     setItems((prev) => {
       const idx = prev.findIndex(
         (i) => i.productId === item.productId && i.size === item.size && i.color === item.color && i.fit === item.fit,

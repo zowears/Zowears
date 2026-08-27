@@ -4,6 +4,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { sendOrderConfirmationEmail } from '../utils/mail.js';
 import { sendWhatsAppOrderConfirmation } from '../utils/whatsapp.js';
+import { sendMetaEvent } from '../utils/meta.js';
 import auth from '../middleware/auth.js';
 
 // Get all orders with pagination
@@ -77,6 +78,23 @@ router.post('/', async (req, res) => {
     
     // Send WhatsApp confirmation
     const whatsappResult = await sendWhatsAppOrderConfirmation(newOrder);
+    
+    // Send Meta CAPI Purchase event
+    // Using the request IP and User Agent, and order details
+    sendMetaEvent('Purchase', newOrder._id.toString(), {
+      email: newOrder.email,
+      phone: newOrder.shippingAddress?.phone,
+      firstName: newOrder.shippingAddress?.firstName,
+      lastName: newOrder.shippingAddress?.lastName,
+      clientIp: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+      clientUserAgent: req.headers['user-agent']
+    }, {
+      content_ids: newOrder.items.map(item => item.productId.toString()),
+      content_type: 'product',
+      value: newOrder.totalAmount,
+      currency: 'PKR'
+    });
+
     
     res.status(201).json({
       ...newOrder.toObject(),
