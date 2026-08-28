@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -105,7 +106,9 @@ export default function RootLayout({ children }) {
           <CartDrawer />
           <Toaster position="bottom-right" theme="light" />
           <AnalyticsTracker />
-          <MetaPixel />
+          <Suspense fallback={null}>
+            <MetaPixel />
+          </Suspense>
         </Providers>
         </body>
     </html>
