@@ -22,17 +22,22 @@ connectDB();
 app.use(compression());
 
 // Middleware - CORS
-app.use(
-  cors({
-    origin: [
-      "https://www.zowears.com",
-      "https://zowears.com",
-      "https://zowears.vercel.app",
-      "http://localhost:3000"
-    ],
-    credentials: true
-  })
-);
+const corsOptions = {
+  origin: [
+    "https://www.zowears.com",
+    "https://zowears.com",
+    "https://zowears.vercel.app",
+    "http://localhost:3000"
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
+};
+
+// Handle preflight OPTIONS requests explicitly (required for Vercel serverless)
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Middleware - JSON parsing
 app.use(express.json());
