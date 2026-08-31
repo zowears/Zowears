@@ -7,6 +7,7 @@ import { LayoutGrid, Rows3, SlidersHorizontal, X, ChevronDown, Loader2 } from "l
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 
 const sizes = ["M", "L", "XL"];
 
@@ -27,6 +28,8 @@ function ShopContent() {
   const { data: products, isLoading } = useQuery({
     queryKey: ["shop-products"],
     queryFn: () => fetchProducts(),
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const [grid, setGrid] = React.useState(true);
@@ -136,7 +139,7 @@ function ShopContent() {
       >
         <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.5em] text-accent-red">
           <span className="h-px w-12 bg-accent-red" />
-          Collective · {filtered.length} items
+          Collective · {isLoading ? "Fetching..." : `${filtered.length} items`}
         </div>
         <h1 className="mt-6 font-display text-6xl font-bold tracking-[-0.06em] md:text-9xl">
           {selectedCats.length === 1 ? selectedCats[0] : (selectedCats.length > 1 ? "Filtered Collection" : "All products")}
@@ -157,7 +160,7 @@ function ShopContent() {
               <SlidersHorizontal className="h-4 w-4" /> Filters
             </button>
             <div className="hidden text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground md:block">
-              Showing {filtered.length} results
+              {isLoading ? "Fetching collection..." : `Showing ${filtered.length} results`}
             </div>
             
             <div className="flex items-center gap-4">
@@ -195,14 +198,14 @@ function ShopContent() {
           >
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] animate-pulse bg-white/5 rounded-xl" />
+                <ProductSkeleton key={i} />
               ))
             ) : paginatedProducts.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
           </div>
 
-          {filtered.length === 0 && (
+          {!isLoading && filtered.length === 0 && (
             <div className="py-32 text-center">
               <div className="font-display text-2xl text-muted-foreground">No matches found for this filter.</div>
               <button onClick={() => { setSelectedCats([]); setPrice(5000); }} className="mt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red underline underline-offset-8">Clear all filters</button>

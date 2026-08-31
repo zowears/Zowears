@@ -66,12 +66,12 @@ export function ProductCard({ product, index }) {
         </div>
 
         {/* Views badge top right */}
-        {product.views > 0 && (
+        {/* {product.views > 0 && (
           <div className="absolute right-3 top-3 z-10 flex items-center gap-1 bg-black/50 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-full">
             <Eye className="h-2.5 w-2.5" />
             {product.views > 999 ? `${(product.views / 1000).toFixed(1)}k` : product.views}
           </div>
-        )}
+        )} */}
 
         {/* Quick Actions — slide up on hover */}
         <div className="absolute bottom-0 left-0 right-0 translate-y-full opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100 z-20">

@@ -15,8 +15,16 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 
 const app = express();
 
-// Connect to Database
-connectDB();
+// Middleware - Database connection for serverless
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection error:", error);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 // Middleware - Compression (reduces bandwidth by ~70%)
 app.use(compression());
@@ -36,7 +44,7 @@ const corsOptions = {
 };
 
 // Handle preflight OPTIONS requests explicitly (required for Vercel serverless)
-app.options('*', cors(corsOptions));
+app.options('/{*path}', cors(corsOptions));
 app.use(cors(corsOptions));
 
 // Middleware - JSON parsing
@@ -75,6 +83,10 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+export default app;

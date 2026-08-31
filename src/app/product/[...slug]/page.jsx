@@ -25,6 +25,8 @@ export default function ProductPage() {
   const { data: allProducts } = useQuery({
     queryKey: ["shop-products"],
     queryFn: fetchProducts,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const [size, setSize] = React.useState("");

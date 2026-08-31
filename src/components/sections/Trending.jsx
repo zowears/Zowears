@@ -5,12 +5,15 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 export function Trending() {
   const { data: products, isLoading } = useQuery({
-    queryKey: ["trending-products"],
+    queryKey: ["shop-products"],
     queryFn: fetchProducts,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const trending = products?.filter(p => p.isFeatured).slice(0, 4) || [];
@@ -47,7 +50,7 @@ export function Trending() {
         <div className="grid grid-cols-2 gap-x-4 gap-y-16 md:grid-cols-3 md:gap-x-8 lg:grid-cols-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-3/4 animate-pulse bg-white/5 rounded-xl" />
+              <ProductSkeleton key={i} />
             ))
           ) : trending.length === 0 ? (
             <div className="col-span-full py-12 text-center text-muted-foreground uppercase tracking-widest text-sm">

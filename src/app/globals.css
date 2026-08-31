@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Zowear — Premium streetwear design system.
    Light Shopify-style aesthetic. All tokens defined here. */
 
