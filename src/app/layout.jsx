@@ -11,18 +11,17 @@ import { MetaPixel } from "@/components/MetaPixel";
 import "./globals.css";
 
 export const metadata = {
+  metadataBase: new URL("https://zowears.com"),
   title: {
-    default: "Zowears — Premium T-shirts",
-    template: "%s | Zowears",
+    default: "Zowears — Premium Embroidered Streetwear in Pakistan",
+    template: "%s | Zowears Pakistan",
   },
-  description: "Zowears crafts premium heavyweight embroidered and printed streetwear. Featuring custom Arabic calligraphy hoodies, boxy oversized tees, and premium 300 GSM cotton. Express shipping to UAE, Saudi Arabia (KSA), Qatar, Kuwait, Bahrain, Oman, and Pakistan.",
+  description: "Zowears is Pakistan's premier destination for high-end, heavyweight embroidered streetwear. Featuring custom Arabic calligraphy hoodies, boxy oversized tees, and premium 300 GSM cotton. Shop the best oversized fits and luxury apparel in Pakistan with express delivery.",
   keywords: [
-    "streetwear dubai", "streetwear riyadh", "streetwear saudi arabia", "premium streetwear gcc", 
-    "arabic calligraphy streetwear", "embroidered hoodies uae", "oversized t-shirts qatar",
-    "luxury streetwear gulf", "ملابس ستريت وير دبي", "تيشيرتات خط عربي", "هوديز مطرزة الخليج",
-    "ملابس مطرزة فاخرة السعودية", "streetwear pakistan", "embroidered t-shirts", 
-    "oversized hoodies pakistan", "oversized t-shirts", "premium fabric streetwear",
-    "heavyweight hoodies gcc", "dubai clothing brand", "riyadh luxury fashion"
+    "streetwear pakistan", "embroidered t-shirts pakistan", "oversized hoodies pakistan", 
+    "premium streetwear pakistan", "heavyweight hoodies pakistan", "arabic calligraphy streetwear", 
+    "embroidered hoodies lahore", "oversized t-shirts karachi", "luxury streetwear islamabad", 
+    "custom apparel pakistan", "streetwear dubai", "streetwear riyadh", "streetwear saudi arabia"
   ],
   authors: [{ name: "Zowears Collective" }],
   creator: "Zowears",
@@ -54,11 +53,11 @@ export const metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "en_PK",
     url: "https://zowears.com",
-    siteName: "Zowears",
-    title: "Zowears — Premium T-shirts",
-    description: "High-end heavyweight embroidered tees, calligraphy hoodies, and plain oversized essentials. Express shipping to Dubai, Riyadh, Doha, Kuwait, and worldwide.",
+    siteName: "Zowears Pakistan",
+    title: "Zowears — Premium Embroidered Streetwear in Pakistan",
+    description: "High-end heavyweight embroidered tees, calligraphy hoodies, and plain oversized essentials in Pakistan. Shop our exclusive custom-tailored collection today.",
     images: [
       {
         url: "/og-image.jpg",
@@ -70,8 +69,8 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Zowears — Premium T-shirts",
-    description: "High-end heavyweight embroidered tees, calligraphy hoodies, and plain oversized essentials. Express shipping to Dubai, Riyadh, Doha, Kuwait, and worldwide.",
+    title: "Zowears — Premium Embroidered Streetwear in Pakistan",
+    description: "High-end heavyweight embroidered tees, calligraphy hoodies, and plain oversized essentials in Pakistan. Shop our exclusive custom-tailored collection today.",
     images: ["/og-image.jpg"],
     creator: "@zowears",
   },

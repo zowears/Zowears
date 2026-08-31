@@ -6,6 +6,7 @@ import { Countdown } from "@/components/sections/Countdown";
 import { Reviews } from "@/components/sections/Reviews";
 import { Gallery } from "@/components/sections/Gallery";
 import { Newsletter } from "@/components/sections/Newsletter";
+import { SeoContent } from "@/components/sections/SeoContent";
 
 export default function Home() {
   return (
@@ -17,6 +18,7 @@ export default function Home() {
       {/* <Countdown /> */}
       {/* <Reviews /> */}
       <Gallery />
+      <SeoContent />
       <Newsletter />
     </>
   );

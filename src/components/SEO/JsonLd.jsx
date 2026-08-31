@@ -7,11 +7,15 @@ export function JsonLd() {
       "@context": "https://schema.org",
       "@type": "Organization",
       "@id": "https://zowears.com/#organization",
-      "name": "Zowears",
+      "name": "Zowears Pakistan",
       "url": "https://zowears.com",
       "logo": "https://zowears.com/logo.png",
       "image": "https://zowears.com/og-image.jpg",
-      "description": "Zowears is a premium dark-luxury streetwear and design collective specializing in heavyweight embroidery, detailed custom fabrics, and custom Arabic calligraphy apparel.",
+      "description": "Zowears is Pakistan's premier dark-luxury streetwear and design collective specializing in heavyweight embroidery, detailed custom fabrics, oversized t-shirts, and custom Arabic calligraphy apparel.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "PK"
+      },
       "sameAs": [
         "https://instagram.com/zowears",
         "https://twitter.com/zowears"
@@ -20,9 +24,34 @@ export function JsonLd() {
         "@type": "ContactPoint",
         "email": "support@zowears.com",
         "contactType": "customer service",
-        "areaServed": ["AE", "SA", "QA", "KW", "OM", "BH", "PK"],
+        "areaServed": ["PK", "AE", "SA", "QA", "KW", "OM", "BH"],
         "availableLanguage": ["en", "ar"]
       }
+    },
+    // 1.5 BreadcrumbList Schema
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://zowears.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Shop All Streetwear",
+          "item": "https://zowears.com/shop"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Heavyweight Embroidery",
+          "item": "https://zowears.com/shop?c=embroidered"
+        }
+      ]
     },
     // 2. WebSite Schema (with Search Box Action)
     {

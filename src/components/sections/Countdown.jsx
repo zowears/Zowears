@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import countdownImg from "@/assets/001 (20).jpeg";
+import countdownImg from "@/assets/limited-edition-embroidery-pakistan.jpeg";
 
 // Memoized time unit component to prevent re-renders
 const TimeUnit = React.memo(({ value, label }) => {
@@ -51,7 +51,7 @@ export function Countdown() {
       <div className="absolute inset-0">
         <Image
           src={countdownImg}
-          alt="Limited drop"
+          alt="Limited edition embroidered streetwear drop in Pakistan"
           fill
           sizes="100vw"
           className="object-cover"

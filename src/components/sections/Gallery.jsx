@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import img1 from "@/assets/Streetwear 01.jpg";
-import img2 from "@/assets/Streetwear 02.jpg";
-import img3 from "@/assets/Streetwear 03.jpg";
-import img4 from "@/assets/Streetwear 04.jpg";
-import img5 from "@/assets/Streetwear 05.jpg";
-import img6 from "@/assets/Streetwear 06.jpg";
+import img1 from "@/assets/streetwear-fashion-pakistan-1.jpg";
+import img2 from "@/assets/streetwear-fashion-pakistan-2.jpg";
+import img3 from "@/assets/streetwear-fashion-pakistan-3.jpg";
+import img4 from "@/assets/streetwear-fashion-pakistan-4.jpg";
+import img5 from "@/assets/streetwear-fashion-pakistan-5.jpg";
+import img6 from "@/assets/streetwear-fashion-pakistan-6.jpg";
 
 const images = [img1, img2, img3, img4, img5, img6];
 
@@ -33,7 +33,7 @@ export function Gallery() {
             >
               <Image
                 src={img}
-                alt={`Community shot ${i + 1}`}
+                alt={`Premium streetwear fashion look in Pakistan - Look ${i + 1}`}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
                 className="object-cover transition-transform duration-[1200ms] group-hover:scale-110"

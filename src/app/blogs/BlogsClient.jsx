@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Clock, Calendar, User, ChevronRight, X } from "lucide-react";
 
 // Importing beautiful lifestyle cover assets
-import blog1 from "@/assets/look view 01.jpg";
-import blog2 from "@/assets/look view 02.jpg";
-import blog3 from "@/assets/look view 04.jpg";
+import blog1 from "@/assets/streetwear-pakistan-embroidery-blog.jpg";
+import blog2 from "@/assets/choosing-streetwear-gsm-fabric.jpg";
+import blog3 from "@/assets/arabic-calligraphy-modern-streetwear.jpg";
 
 const articles = [
   {

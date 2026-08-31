@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import story from "@/assets/Made in shadow.jpg";
-import lifestyle from "@/assets/Shadow.jpg";
+import story from "@/assets/premium-embroidery-craftsmanship.jpg";
+import lifestyle from "@/assets/embroidered-streetwear-lifestyle-pakistan.jpg";
 
 export function Story() {
   return (
@@ -61,7 +61,7 @@ export function Story() {
             <div className="relative aspect-[4/5] overflow-hidden bg-background">
               <Image 
                 src={story} 
-                alt="Zowears craft" 
+                alt="Zowears premium embroidery craftsmanship in Pakistan" 
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover grayscale hover:grayscale-0 transition-all duration-[2000ms]" 
@@ -76,7 +76,7 @@ export function Story() {
               <div className="relative h-full w-full bg-white">
                 <Image 
                   src={lifestyle} 
-                  alt="Streetwear lifestyle" 
+                  alt="Embroidered streetwear lifestyle in Pakistan" 
                   fill
                   sizes="256px"
                   className="object-cover" 

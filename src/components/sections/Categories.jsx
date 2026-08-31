@@ -5,10 +5,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
-import cat1 from "@/assets/Oversized Tees.jpg";
-import cat2 from "@/assets/Heavy Hoodies.jpg";
-import cat4 from "@/assets/Anime.jpg";
-import cat5 from "@/assets/Puff Printing.jpg";
+import cat1 from "@/assets/oversized-tshirts-pakistan.jpg";
+import cat2 from "@/assets/heavyweight-embroidered-hoodies.jpg";
+import cat4 from "@/assets/anime-streetwear-pakistan.jpg";
+import cat5 from "@/assets/puff-printing-new-arrivals.jpg";
 
 const cats = [
   { name: "Oversized Tees", img: cat1, c: "t-shirts", price: 1999, discount: 20 },
@@ -52,7 +52,7 @@ export function Categories() {
                 </span>
                 <Image
                   src={c.img}
-                  alt={c.name}
+                  alt={`${c.name} - Premium embroidered streetwear in Pakistan`}
                   fill
                   sizes="(max-width: 768px) 50vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-110"

@@ -6,9 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Instagram } from "lucide-react";
 
-import imgMain from "@/assets/Hero Main Img.jpg";
-import imgTrending from "@/assets/Hero Second Img.jpg";
-import imgNew from "@/assets/Hero Third Img.jpg";
+import imgMain from "@/assets/premium-embroidered-streetwear-pakistan.jpg";
+import imgTrending from "@/assets/heavyweight-hoodies-pakistan.jpg";
+import imgNew from "@/assets/premium-quality-fabrics-pakistan.jpg";
 
 export function Hero() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -132,7 +132,7 @@ export function Hero() {
                   <div className="absolute inset-0 bg-linear-to-t from-[#0E0D0C]/90 via-[#0E0D0C]/30 to-transparent z-10 transition-opacity duration-500 group-hover:opacity-95" />
                   <Image
                     src={imgMain}
-                    alt="Zowears Signature Collection"
+                    alt="Premium embroidered streetwear in Pakistan by Zowears"
                     fill
                     priority
                     sizes="(min-width: 1024px) 60vw, 90vw"
@@ -170,7 +170,7 @@ export function Hero() {
                   <div className="absolute inset-0 bg-linear-to-t from-[#0E0D0C]/90 via-[#0E0D0C]/30 to-transparent z-10 transition-opacity duration-500 group-hover:opacity-95" />
                   <Image
                     src={imgTrending}
-                    alt="Printed & Hoodies"
+                    alt="Heavyweight embroidered hoodies in Pakistan"
                     fill
                     sizes="(min-width: 1024px) 60vw, 90vw"
                     className="object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
@@ -207,7 +207,7 @@ export function Hero() {
                   <div className="absolute inset-0 bg-linear-to-t from-[#0E0D0C]/90 via-[#0E0D0C]/30 to-transparent z-10 transition-opacity duration-500 group-hover:opacity-95" />
                   <Image
                     src={imgNew}
-                    alt="Normal & Premium Fabric Option"
+                    alt="Premium quality streetwear fabrics in Pakistan"
                     fill
                     sizes="(min-width: 1024px) 60vw, 90vw"
                     className="object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
