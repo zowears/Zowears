@@ -70,7 +70,7 @@ function ShopContent() {
     if (sort === "asc") list.sort((a, b) => a.price - b.price);
     else if (sort === "desc") list.sort((a, b) => b.price - a.price);
     else if (sort === "rating") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    else list.sort((a, b) => (b.views || 0) - (a.views || 0));
+    // For default "featured" sort, preserve backend rank order (Rank 1-10 first)
     return list;
   }, [products, selectedCats, price, sort]);
 
