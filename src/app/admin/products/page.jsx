@@ -212,6 +212,37 @@ export default function ProductsPage() {
     },
   });
 
+  const updateRankMutation = useMutation({
+    mutationFn: async ({ id, rank }) => {
+      const token = localStorage.getItem("admin_token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      };
+      const res = await fetch(`${API_URL}/products/${id}/rank`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ rank }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update rank");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      if (data.rank) {
+        toast.success(`Assigned to Rank #${data.rank}`);
+      } else {
+        toast.success("Rank cleared");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const filteredProducts = products?.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p._id?.toLowerCase().includes(search.toLowerCase())
@@ -308,6 +339,73 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Top 10 Pinned Products Section */}
+      <div className="bg-[#0a0a0a] border border-amber-500/30 rounded-xl p-5 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500 text-black font-extrabold text-xs">
+              10
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Top 10 Pinned Products</h2>
+              <p className="text-xs text-zinc-400">Products assigned a rank appear first in customer listings in exact order (Rank 1 to 10).</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2.5">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((rankNum) => {
+            const pinnedProduct = products?.find(p => p.rank === rankNum);
+            return (
+              <div
+                key={rankNum}
+                className={`relative flex flex-col items-center justify-between rounded-lg border p-2 text-center transition-all ${
+                  pinnedProduct
+                    ? "border-amber-500/50 bg-amber-500/5 text-white"
+                    : "border-dashed border-zinc-800 bg-zinc-900/40 text-zinc-600"
+                }`}
+              >
+                <div className="absolute top-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black shadow">
+                  {rankNum}
+                </div>
+
+                {pinnedProduct ? (
+                  <div className="w-full flex flex-col items-center pt-3">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-md bg-zinc-900 border border-zinc-800">
+                      {(pinnedProduct.image || pinnedProduct.images?.[0]?.url || pinnedProduct.images?.[0]) ? (
+                        <Image
+                          src={pinnedProduct.image || (typeof pinnedProduct.images?.[0] === 'string' ? pinnedProduct.images[0] : pinnedProduct.images?.[0]?.url) || "/placeholder.png"}
+                          alt={pinnedProduct.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600 text-[9px]">No img</div>
+                      )}
+                    </div>
+                    <p className="mt-1.5 w-full truncate text-[11px] font-medium text-white px-1" title={pinnedProduct.name}>
+                      {pinnedProduct.name}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => updateRankMutation.mutate({ id: pinnedProduct._id || pinnedProduct.id, rank: null })}
+                      className="mt-1 flex items-center gap-0.5 text-[9px] font-semibold text-red-400 hover:text-red-300 hover:underline"
+                      title="Clear Rank"
+                    >
+                      <X className="h-3 w-3" /> Unpin
+                    </button>
+                  </div>
+                ) : (
+                  <div className="py-5">
+                    <span className="text-[10px] font-medium text-zinc-600">Empty</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -344,20 +442,21 @@ export default function ProductsPage() {
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Category</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Price</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Rank (Top 10)</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center">
+                  <td colSpan="5" className="px-6 py-12 text-center">
                     <Loader2 className="w-6 h-6 text-zinc-500 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-zinc-500 uppercase tracking-widest">Loading products...</p>
                   </td>
                 </tr>
               ) : filteredProducts?.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center">
+                  <td colSpan="5" className="px-6 py-12 text-center">
                     <Package className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
                     <p className="text-sm text-zinc-500 uppercase tracking-widest">No products found</p>
                   </td>
@@ -399,6 +498,38 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-white">{formatPrice(product.price)}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={product.rank || "none"}
+                          onChange={(e) => {
+                            const val = e.target.value === "none" ? null : parseInt(e.target.value, 10);
+                            updateRankMutation.mutate({ id: product._id || product.id, rank: val });
+                          }}
+                          className={`text-xs rounded-lg px-2.5 py-1.5 font-medium border transition-colors focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${
+                            product.rank 
+                              ? "bg-amber-500/10 border-amber-500/40 text-amber-400 font-bold" 
+                              : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                          }`}
+                        >
+                          <option value="none">None</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(r => (
+                            <option key={r} value={r}>
+                              Rank #{r}
+                            </option>
+                          ))}
+                        </select>
+                        {product.rank && (
+                          <button
+                            onClick={() => updateRankMutation.mutate({ id: product._id || product.id, rank: null })}
+                            className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                            title="Clear Rank"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">

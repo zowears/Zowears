@@ -34,7 +34,12 @@ router.get('/', async (req, res) => {
     const limit = Math.min(100, parseInt(req.query.limit) || 50);
     const skip = (page - 1) * limit;
     
-    const query = { status: 'active' };
+    const query = {};
+    if (req.query.status && req.query.status !== 'all') {
+      query.status = req.query.status;
+    } else if (!req.query.status) {
+      query.status = 'active';
+    }
     
     // Filter by categories (supports multiple comma-separated categories)
     if (req.query.categories) {
@@ -65,17 +70,40 @@ router.get('/', async (req, res) => {
     }
 
     const [products, total] = await Promise.all([
-      Product.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .select('-__v'),
+      Product.aggregate([
+        { $match: query },
+        {
+          $addFields: {
+            sortRank: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $ne: ["$rank", null] },
+                    { $gt: ["$rank", 0] },
+                    { $lte: ["$rank", 10] }
+                  ]
+                },
+                then: "$rank",
+                else: 999999
+              }
+            }
+          }
+        },
+        { $sort: { sortRank: 1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $project: { sortRank: 0, __v: 0 } }
+      ]),
       Product.countDocuments(query)
     ]);
 
+    const formattedProducts = products.map(p => ({
+      ...p,
+      id: p._id.toString()
+    }));
+
     res.json({
-      data: products,
+      data: formattedProducts,
       pagination: {
         page,
         limit,
@@ -431,16 +459,41 @@ router.patch('/admin/bulk/status', auth, async (req, res) => {
   }
 });
 
-// Get low stock products
-router.get('/admin/low-stock', auth, async (req, res) => {
+// Update product rank (1-10 or null)
+router.patch('/:id/rank', auth, async (req, res) => {
   try {
-    const products = await Product.find({
-      $expr: { $lte: ['$stock', '$lowStockThreshold'] }
-    })
-      .sort({ stock: 1 })
-      .lean();
+    const { rank } = req.body;
+    let targetRank = null;
 
-    res.json(products);
+    if (rank !== null && rank !== undefined && rank !== '' && rank !== 'none' && rank !== 'None') {
+      const parsedRank = parseInt(rank, 10);
+      if (isNaN(parsedRank) || parsedRank < 1 || parsedRank > 10) {
+        return res.status(400).json({ message: 'Rank must be a number between 1 and 10 or null' });
+      }
+      targetRank = parsedRank;
+    }
+
+    const productId = req.params.id;
+
+    // If setting a rank (1-10), remove that rank from any other product currently holding it
+    if (targetRank !== null) {
+      await Product.updateMany(
+        { _id: { $ne: productId }, rank: targetRank },
+        { $set: { rank: null } }
+      );
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { $set: { rank: targetRank } },
+      { new: true }
+    ).select('-__v');
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json(updatedProduct);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

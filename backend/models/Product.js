@@ -22,6 +22,7 @@ const productSchema = new mongoose.Schema({
     index: true
   },
   isFeatured: { type: Boolean, default: false, index: true },
+  rank: { type: Number, min: 1, max: 10, default: null, index: true },
   
   // Pricing
   costPrice: { type: Number, default: 0 },
