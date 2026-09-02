@@ -6,6 +6,12 @@
       "use": "@vercel/node"
     }
   ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "server.mjs"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -16,24 +22,5 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
       ]
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "methods": ["OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://www.zowears.com",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      },
-      "status": 200,
-      "dest": "server.mjs"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "server.mjs"
-    }
   ]
 }
-
