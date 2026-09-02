@@ -44,7 +44,7 @@ const corsOptions = {
 };
 
 // Handle preflight OPTIONS requests explicitly (required for Vercel serverless)
-app.options('/{*path}', cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 // Middleware - JSON parsing
