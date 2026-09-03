@@ -14,8 +14,8 @@ import { formatPrice } from "@/lib/products";
 
 const nav = [
   { label: "Shop All", to: "/shop" },
-  { label: "Girls Wear", to: "/shop?c=Special for Girls" },
   { label: "Designs", to: "/designs" },
+  { label: "Blogs", to: "/blogs" },
 ];
 
 export function Navbar() {
