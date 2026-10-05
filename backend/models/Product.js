@@ -15,6 +15,17 @@ const productSchema = new mongoose.Schema({
   fits: [{
     type: String
   }],
+  productType: {
+    type: String,
+    enum: ['apparel', 'kids'],
+    default: 'apparel',
+    index: true
+  },
+  isKidsWear: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   status: { 
     type: String,
     enum: ['active', 'draft', 'archived'],
@@ -87,6 +98,8 @@ productSchema.pre('save', async function () {
 // Create indexes for common queries
 productSchema.index({ categories: 1, isFeatured: 1 });
 productSchema.index({ categories: 1, status: 1 });
+productSchema.index({ productType: 1, status: 1 });
+productSchema.index({ isKidsWear: 1, status: 1 });
 productSchema.index({ stock: 1, lowStockThreshold: 1 });
 productSchema.index({ name: "text", description: "text", jp: "text" }, { default_language: "english" });
 

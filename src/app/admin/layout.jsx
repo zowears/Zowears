@@ -36,7 +36,8 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     localStorage.removeItem("admin_token");
-    document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
+    document.cookie = "__admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     try {
@@ -45,7 +46,11 @@ export default function AdminLayout({ children }) {
       console.error("Logout request to backend failed:", err);
     }
 
-    router.replace("/admin/login");
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {}
+
+    window.location.href = "/admin/login";
   };
 
   // Login page renders without the dashboard chrome

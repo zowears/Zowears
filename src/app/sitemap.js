@@ -36,6 +36,7 @@ export default async function sitemap() {
   const staticRoutes = [
     "",
     "/shop",
+    "/kids-wear",
     "/fabrics",
     "/embroidered",
     "/blogs",
@@ -47,24 +48,30 @@ export default async function sitemap() {
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split("T")[0],
-    changeFrequency: 
-      route === "" || route === "/shop" ? "daily" : 
-      route === "/blogs" || route === "/embroidered" || route === "/designs" ? "weekly" : 
+    changeFrequency:
+      route === "" || route === "/shop" || route === "/kids-wear" ? "daily" :
+      route === "/blogs" || route === "/embroidered" || route === "/designs" ? "weekly" :
       "monthly",
-    priority: 
-      route === "" ? 1.0 : 
-      route === "/shop" || route === "/designs" ? 0.9 : 
-      route === "/blogs" || route === "/embroidered" ? 0.8 : 
+    priority:
+      route === "" ? 1.0 :
+      route === "/shop" || route === "/kids-wear" || route === "/designs" ? 0.9 :
+      route === "/blogs" || route === "/embroidered" ? 0.8 :
       0.5,
   }));
 
-  // Add product routes
-  const productRoutes = products.map(product => ({
-    url: `${baseUrl}/product/${product.slug || product._id || product.id}`,
-    lastModified: product.updatedAt || product.createdAt || new Date().toISOString().split("T")[0],
-    changeFrequency: "weekly",
-    priority: product.isFeatured ? 0.8 : 0.6,
-  }));
+  // Add product routes — kids products use /product/kids-wear/ prefix
+  const productRoutes = products.map(product => {
+    const isKids = product.isKidsWear || product.productType === 'kids' || product.categories?.includes('Kids Wear');
+    const path = isKids
+      ? `/product/kids-wear/${product.slug || product._id || product.id}`
+      : `/product/${product.slug || product._id || product.id}`;
+    return {
+      url: `${baseUrl}${path}`,
+      lastModified: product.updatedAt || product.createdAt || new Date().toISOString().split("T")[0],
+      changeFrequency: "weekly",
+      priority: product.isFeatured ? 0.8 : 0.6,
+    };
+  });
 
   // Add design routes
   const designRoutes = designs.map(design => ({

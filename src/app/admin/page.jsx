@@ -37,8 +37,9 @@ export default function AdminOverview() {
       
       if (res.status === 401) {
         localStorage.removeItem("admin_token");
-        document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict";
-        router.replace("/admin/login");
+        document.cookie = "__admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        window.location.href = "/admin/login";
         throw new Error("Unauthorized");
       }
 

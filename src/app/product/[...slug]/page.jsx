@@ -3,7 +3,9 @@ import { fetchProduct } from "@/lib/products";
 
 // Server component to handle dynamic SEO metadata
 export async function generateMetadata({ params }) {
-  const slugArray = params.slug || [];
+  // Next.js 16: params is a Promise — must be awaited
+  const resolvedParams = await params;
+  const slugArray = resolvedParams.slug || [];
   const idOrSlug = slugArray[slugArray.length - 1];
 
   if (!idOrSlug) {
@@ -57,8 +59,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default function ProductPage({ params }) {
-  // Pass params to the client component for rendering
+export default function ProductPage() {
+  // ProductClient uses useParams() hook internally to read the route params
   return (
     <>
       <ProductClient />

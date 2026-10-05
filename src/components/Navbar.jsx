@@ -14,6 +14,7 @@ import { formatPrice } from "@/lib/products";
 
 const nav = [
   { label: "Shop All", to: "/shop" },
+  { label: "Kids Wear", to: "/kids-wear" },
   { label: "Designs", to: "/designs" },
   { label: "Blogs", to: "/blogs" },
 ];

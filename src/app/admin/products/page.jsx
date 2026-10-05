@@ -21,10 +21,25 @@ import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+const KIDS_SIZES = [
+  "2/3",
+  "3/4",
+  "4/5",
+  "5/6",
+  "6/7",
+  "7/8",
+  "8/9",
+  "9/10",
+  "10/11",
+  "11/12"
+];
+
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState("apparel"); // "apparel" | "kids"
+  const [sectionFilter, setSectionFilter] = useState("all"); // "all" | "apparel" | "kids"
   const [editingProduct, setEditingProduct] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -32,6 +47,8 @@ export default function ProductsPage() {
 
   const [newProduct, setNewProduct] = useState({
     name: "",
+    productType: "apparel",
+    isKidsWear: false,
     categories: [],
     fits: [],
     price: "",
@@ -40,6 +57,7 @@ export default function ProductsPage() {
     stock: "0",
     badge: "",
     jp: "",
+    sizes: [],
     colors: []
   });
 
@@ -77,8 +95,11 @@ export default function ProductsPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingProduct(null);
+    setModalTab("apparel");
     setNewProduct({
       name: "",
+      productType: "apparel",
+      isKidsWear: false,
       categories: [],
       fits: [],
       price: "",
@@ -87,6 +108,7 @@ export default function ProductsPage() {
       stock: "0",
       badge: "",
       jp: "",
+      sizes: [],
       colors: []
     });
     setImageFiles([]);
@@ -95,10 +117,14 @@ export default function ProductsPage() {
   };
 
   const handleEditClick = (product) => {
+    const isKids = Boolean(product.isKidsWear || product.productType === "kids" || product.categories?.includes("Kids Wear"));
+    setModalTab(isKids ? "kids" : "apparel");
     setEditingProduct(product);
     setNewProduct({
       name: product.name || "",
-      categories: product.categories || [],
+      productType: isKids ? "kids" : "apparel",
+      isKidsWear: isKids,
+      categories: product.categories || (isKids ? ["Kids Wear"] : []),
       fits: product.fits || [],
       price: product.price !== undefined ? String(product.price) : "",
       compareAt: product.compareAt || product.comparePrice ? String(product.compareAt || product.comparePrice) : "",
@@ -106,6 +132,7 @@ export default function ProductsPage() {
       stock: product.stock !== undefined ? String(product.stock) : "0",
       badge: product.badge || "",
       jp: product.jp || "",
+      sizes: product.sizes || [],
       colors: product.colors?.map(c => ({
         colorId: c.colorId || c._id || "",
         name: c.name || "",
@@ -243,10 +270,16 @@ export default function ProductsPage() {
     },
   });
 
-  const filteredProducts = products?.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p._id?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProducts = products?.filter((p) => {
+    const isKids = Boolean(p.isKidsWear || p.productType === "kids" || p.categories?.includes("Kids Wear"));
+    if (sectionFilter === "kids" && !isKids) return false;
+    if (sectionFilter === "apparel" && isKids) return false;
+
+    return (
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p._id?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const handleImageChange = (e) => {
     const newFiles = Array.from(e.target.files);
@@ -308,20 +341,41 @@ export default function ProductsPage() {
     }));
   };
 
+  const handleKidsSizeToggle = (sz) => {
+    setNewProduct((prev) => {
+      const currentSizes = prev.sizes || [];
+      const hasSize = currentSizes.includes(sz);
+      return {
+        ...prev,
+        sizes: hasSize ? currentSizes.filter((s) => s !== sz) : [...currentSizes, sz],
+      };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const isKids = modalTab === "kids";
+
+    if (isKids && (!newProduct.sizes || newProduct.sizes.length === 0)) {
+      toast.error("Please select at least one age size for Kids Wear");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", newProduct.name);
-    formData.append("categories", JSON.stringify(newProduct.categories || []));
-    formData.append("fits", JSON.stringify(newProduct.fits || []));
+    formData.append("productType", isKids ? "kids" : "apparel");
+    formData.append("isKidsWear", isKids ? "true" : "false");
+    formData.append("categories", JSON.stringify(isKids ? ["Kids Wear"] : (newProduct.categories || [])));
+    formData.append("fits", JSON.stringify(isKids ? [] : (newProduct.fits || [])));
     formData.append("price", newProduct.price);
-    formData.append("compareAt", newProduct.compareAt || "");
-    formData.append("comparePrice", newProduct.compareAt || "");
+    formData.append("compareAt", isKids ? "" : (newProduct.compareAt || ""));
+    formData.append("comparePrice", isKids ? "" : (newProduct.compareAt || ""));
     formData.append("description", newProduct.description || "");
-    formData.append("stock", newProduct.stock || "0");
-    formData.append("badge", newProduct.badge || "");
-    formData.append("jp", newProduct.jp || "");
-    formData.append("colors", JSON.stringify(newProduct.colors || []));
+    formData.append("stock", newProduct.stock || "100");
+    formData.append("badge", isKids ? "" : (newProduct.badge || ""));
+    formData.append("jp", isKids ? "" : (newProduct.jp || ""));
+    formData.append("colors", JSON.stringify(isKids ? [] : (newProduct.colors || [])));
+    formData.append("sizes", JSON.stringify(isKids ? (newProduct.sizes || []) : []));
     
     imageFiles.forEach((file) => formData.append("images", file));
     if (removeImages.length > 0) {
@@ -406,31 +460,85 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="w-full bg-[#0a0a0a] border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="relative flex-1 min-w-[240px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full bg-[#0a0a0a] border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-lg text-xs">
+            <button
+              onClick={() => setSectionFilter("all")}
+              className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                sectionFilter === "all"
+                  ? "bg-white text-black font-bold shadow"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              All ({products?.length || 0})
+            </button>
+            <button
+              onClick={() => setSectionFilter("apparel")}
+              className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                sectionFilter === "apparel"
+                  ? "bg-white text-black font-bold shadow"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Apparel ({products?.filter(p => !p.isKidsWear && p.productType !== "kids" && !p.categories?.includes("Kids Wear")).length || 0})
+            </button>
+            <button
+              onClick={() => setSectionFilter("kids")}
+              className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                sectionFilter === "kids"
+                  ? "bg-accent-red text-white font-bold shadow"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Kids Wear ({products?.filter(p => p.isKidsWear || p.productType === "kids" || p.categories?.includes("Kids Wear")).length || 0})
+            </button>
+          </div>
         </div>
-        <button 
-          onClick={() => {
-            setEditingProduct(null);
-            setNewProduct({ name: "", categories: [], fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", colors: [] });
-            setImageFiles([]);
-            setExistingImages([]);
-            setRemoveImages([]);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center justify-center gap-2 bg-white text-black px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </button>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setModalTab("apparel");
+              setNewProduct({ name: "", productType: "apparel", isKidsWear: false, categories: [], fits: [], price: "", compareAt: "", description: "", stock: "0", badge: "", jp: "", sizes: [], colors: [] });
+              setImageFiles([]);
+              setExistingImages([]);
+              setRemoveImages([]);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 bg-white text-black px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-zinc-200 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Apparel
+          </button>
+          <button
+            onClick={() => {
+              setEditingProduct(null);
+              setModalTab("kids");
+              setNewProduct({ name: "", productType: "kids", isKidsWear: true, categories: ["Kids Wear"], fits: [], price: "", compareAt: "", description: "", stock: "100", badge: "", jp: "", sizes: [], colors: [] });
+              setImageFiles([]);
+              setExistingImages([]);
+              setRemoveImages([]);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 bg-accent-red text-white px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-red-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Kids Product
+          </button>
+        </div>
       </div>
 
       {/* Product List Table */}
@@ -462,7 +570,9 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts?.map((product) => (
+                filteredProducts?.map((product) => {
+                  const isProductKids = Boolean(product.isKidsWear || product.productType === "kids" || product.categories?.includes("Kids Wear"));
+                  return (
                   <tr key={product._id} className="hover:bg-white/[0.01] transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -494,7 +604,20 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.categories?.join(" / ")}</span>
+                      {isProductKids ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-red/10 border border-accent-red/30 text-accent-red">
+                            Kids Wear
+                          </span>
+                          {product.sizes?.length > 0 && (
+                            <span className="text-[9px] text-zinc-400 font-mono">
+                              Sizes: {product.sizes.join(", ")}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-zinc-400 uppercase tracking-wider">{product.categories?.join(" / ")}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-white">{formatPrice(product.price)}</p>
@@ -561,7 +684,8 @@ export default function ProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -574,289 +698,487 @@ export default function ProductsPage() {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeModal}></div>
           <div className="relative bg-[#0a0a0a] border border-zinc-800 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <h2 className="text-xl font-bold text-white tracking-tight">
-                {editingProduct ? "Edit Product" : "Add New Product"}
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">
+                  {editingProduct
+                    ? (modalTab === "kids" ? "Edit Kids Wear Product" : "Edit Apparel Product")
+                    : (modalTab === "kids" ? "Add Kids Wear Product" : "Add New Apparel Product")}
+                </h2>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {modalTab === "kids"
+                    ? "Dedicated Kids Collection product form"
+                    : "Standard adult streetwear product form"}
+                </p>
+              </div>
               <button onClick={closeModal} className="text-zinc-500 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Name</label>
-                  <input
-                    required
-                    type="text"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="e.g. Kyoto Oversized Tee"
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2 mt-2 border border-zinc-800 p-3 rounded-lg bg-zinc-900/50">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Categories</label>
-                  <div className="flex flex-wrap gap-4">
-                    {[
-                      "T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", 
-                      "Denim Jackets", "Plain Tee & Hoodies", "Special for Girls", "Designs"
-                    ].map(cat => (
-                      <label key={cat} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newProduct.categories?.includes(cat)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewProduct({ ...newProduct, categories: [...(newProduct.categories || []), cat] });
-                            } else {
-                              setNewProduct({ ...newProduct, categories: (newProduct.categories || []).filter(c => c !== cat) });
-                            }
-                          }}
-                          className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
-                        />
-                        <span className="text-sm text-zinc-300">{cat}</span>
-                      </label>
-                    ))}
+            {/* Toggle / Tabs at top of Add Product modal */}
+            <div className="grid grid-cols-2 p-1 mx-6 mt-4 bg-zinc-900 rounded-lg border border-zinc-800 gap-1">
+              <button
+                type="button"
+                onClick={() => setModalTab("apparel")}
+                className={`py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all flex items-center justify-center gap-2 ${
+                  modalTab === "apparel"
+                    ? "bg-white text-black shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Apparel
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab("kids")}
+                className={`py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all flex items-center justify-center gap-2 ${
+                  modalTab === "kids"
+                    ? "bg-accent-red text-white shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Kids Wear
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[72vh] overflow-y-auto custom-scrollbar">
+              {modalTab === "kids" ? (
+                /* ================= KIDS WEAR FORM ONLY ================= */
+                /* ONLY: Product Name, Sizes, Price, Details, Images */
+                <div className="space-y-4">
+                  {/* 1. PRODUCT NAME (text input) */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      Product Name <span className="text-accent-red">*</span>
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent-red"
+                      placeholder="e.g. Kids Embroidered Drop Hoodie"
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    />
                   </div>
-                </div>
 
-                {/* Available Fits / Sub Category Options */}
-                {!(newProduct.categories?.includes("Denim Jackets") && !["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts"].some(c => newProduct.categories?.includes(c))) && (
-                  <div className="space-y-2 col-span-2 mt-2 p-3 border border-zinc-800 rounded-lg bg-zinc-900/50">
+                  {/* 2. SIZES (checkbox group: 2/3, 3/4, 4/5, 5/6, 6/7, 7/8, 8/9, 9/10, 10/11, 11/12) */}
+                  <div className="space-y-2 border border-zinc-800 p-4 rounded-lg bg-zinc-900/50">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits / Styles</label>
-                      <span className="text-[9px] text-zinc-500">Selecting Drop Shoulder adds +Rs. 200</span>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        Sizes (Age in Years) <span className="text-accent-red">*</span>
+                      </label>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        {newProduct.sizes?.length || 0} selected
+                      </span>
                     </div>
-                    <div className="flex flex-wrap gap-4">
-                      {["Regular Fit", "Drop Shoulder", "Oversized"].map(fit => (
-                        <label key={fit} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={newProduct.fits?.includes(fit)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewProduct({ ...newProduct, fits: [...(newProduct.fits || []), fit] });
-                              } else {
-                                setNewProduct({ ...newProduct, fits: (newProduct.fits || []).filter(f => f !== fit) });
-                              }
-                            }}
-                            className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
-                          />
-                          <span className="text-sm text-zinc-300">{fit}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Price (Rs.)</label>
-                  <input
-                    required
-                    type="number"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="1899"
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Compare At Price (Rs.)</label>
-                  <input
-                    type="number"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="e.g. 2499"
-                    value={newProduct.compareAt}
-                    onChange={(e) => setNewProduct({ ...newProduct, compareAt: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Stock Qty</label>
-                  <input
-                    required
-                    type="number"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="100"
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Badge</label>
-                  <input
-                    type="text"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                    placeholder="e.g. Limited Edition, Sale"
-                    value={newProduct.badge}
-                    onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Colors and Sizes per Color */}
-              <div className="space-y-4 pt-2 border-t border-zinc-800">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Colors</label>
-                <div className="flex flex-wrap gap-2">
-                  {availableColors.map((color) => {
-                    const isSelected = newProduct.colors?.some(c => c.colorId === color._id);
-                    return (
-                      <button
-                        key={color._id}
-                        type="button"
-                        onClick={() => handleColorToggle(color)}
-                        className={`px-3 py-2 rounded-lg border transition-all flex items-center gap-2 ${
-                          isSelected
-                            ? "border-accent-red bg-accent-red/10 text-white"
-                            : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                        }`}
-                      >
-                        <div
-                          className="w-3.5 h-3.5 rounded-full border border-white/20"
-                          style={{ backgroundColor: color.hexCode }}
-                        />
-                        <span className="text-xs font-medium">{color.name}</span>
-                        {isSelected && (
-                          <Check className="w-3.5 h-3.5 text-accent-red" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {newProduct.colors?.length > 0 && (
-                  <div className="space-y-3 mt-4">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Select Sizes for Each Color</label>
-                    <div className="grid grid-cols-1 gap-3">
-                      {newProduct.colors.map(selectedColor => (
-                        <div key={selectedColor.colorId} className="border border-zinc-800 rounded-lg p-3 bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded-full border border-white/20" 
-                              style={{ backgroundColor: selectedColor.hexCode }} 
-                            />
-                            <span className="text-sm font-semibold text-white">{selectedColor.name}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {["S", "M", "L", "XL", "XXL"].map((size) => {
-                              const hasSize = selectedColor.sizes?.includes(size);
-                              return (
-                                <button
-                                  key={size}
-                                  type="button"
-                                  onClick={() => handleColorSizeToggle(selectedColor.colorId, size)}
-                                  className={`px-3 py-1 text-xs rounded-md border transition-all font-medium ${
-                                    hasSize
-                                      ? "border-accent-red bg-accent-red text-white"
-                                      : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-500 hover:text-white"
-                                  }`}
-                                >
-                                  {size}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Images */}
-              <div className="space-y-2 pt-2 border-t border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Images</label>
-                  {(existingImages.length > 0 || imageFiles.length > 0) && (
-                    <span className="text-[10px] text-zinc-500">{existingImages.length + imageFiles.length} total image(s)</span>
-                  )}
-                </div>
-
-                {/* Existing Images (When Editing) */}
-                {existingImages.length > 0 && (
-                  <div className="space-y-1 mb-2">
-                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Existing Images:</span>
-                    <div className="grid grid-cols-4 gap-2">
-                      {existingImages.map((url, idx) => (
-                        <div key={idx} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
-                          <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
-                          {idx === 0 && (
-                            <div className="absolute top-1 left-1 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
-                              Primary
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeExistingImage(url)}
-                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                            title="Remove image"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Upload zone for new images */}
-                <label className="relative group cursor-pointer block">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="sr-only"
-                  />
-                  <div className="w-full h-20 border-2 border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center gap-1 group-hover:border-zinc-600 group-hover:bg-zinc-900/80 transition-all bg-zinc-900/50">
-                    <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-                    <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">Click to upload new images</span>
-                  </div>
-                </label>
-
-                {/* Previews of newly selected files */}
-                {imageFiles.length > 0 && (
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">New Images to Upload:</span>
-                    <div className="grid grid-cols-4 gap-2">
-                      {imageFiles.map((file, i) => {
-                        const url = URL.createObjectURL(file);
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                      {KIDS_SIZES.map((sz) => {
+                        const isChecked = newProduct.sizes?.includes(sz);
                         return (
-                          <div key={i} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
-                            <img src={url} alt={file.name} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeNewImage(i)}
-                              className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <label
+                            key={sz}
+                            className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer select-none transition-all ${
+                              isChecked
+                                ? "border-accent-red bg-accent-red/10 text-white shadow-sm"
+                                : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleKidsSizeToggle(sz)}
+                              className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-accent-red focus:ring-accent-red/20 accent-accent-red"
+                            />
+                            <span className="text-xs font-semibold">{sz}</span>
+                          </label>
                         );
                       })}
                     </div>
                   </div>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
-                <textarea
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[90px]"
-                  placeholder="Describe the product details..."
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                />
-              </div>
+                  {/* 3. PRICE (Rs.) */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      Price (Rs.) <span className="text-accent-red">*</span>
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent-red"
+                      placeholder="e.g. 2499"
+                      value={newProduct.price}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                    />
+                  </div>
 
-              <div className="pt-4 flex gap-3">
+                  {/* 4. DETAILS (description text field) */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                      Details / Description
+                    </label>
+                    <textarea
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2.5 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent-red min-h-[90px]"
+                      placeholder="Describe the kids product details, fabric, fit..."
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    />
+                  </div>
+
+                  {/* 5. IMAGES (upload, multiple images supported same as other products) */}
+                  <div className="space-y-2 pt-2 border-t border-zinc-800">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Product Images</label>
+                      {(existingImages.length > 0 || imageFiles.length > 0) && (
+                        <span className="text-[10px] text-zinc-500">{existingImages.length + imageFiles.length} total image(s)</span>
+                      )}
+                    </div>
+
+                    {/* Existing Images (When Editing) */}
+                    {existingImages.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Existing Images:</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {existingImages.map((url, idx) => (
+                            <div key={idx} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                              <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
+                              {idx === 0 && (
+                                <div className="absolute top-1 left-1 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                  Primary
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeExistingImage(url)}
+                                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                title="Remove image"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload zone for new images */}
+                    <label className="relative group cursor-pointer block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="sr-only"
+                      />
+                      <div className="w-full h-20 border-2 border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center gap-1 group-hover:border-zinc-600 group-hover:bg-zinc-900/80 transition-all bg-zinc-900/50">
+                        <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">Click to upload new images</span>
+                      </div>
+                    </label>
+
+                    {/* Previews of newly selected files */}
+                    {imageFiles.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">New Images to Upload:</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {imageFiles.map((file, i) => {
+                            const url = URL.createObjectURL(file);
+                            return (
+                              <div key={i} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                                <img src={url} alt={file.name} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeNewImage(i)}
+                                  className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* ================= ADULT APPAREL FORM ================= */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Name</label>
+                      <input
+                        required
+                        type="text"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                        placeholder="e.g. Kyoto Oversized Tee"
+                        value={newProduct.name}
+                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 space-y-2 mt-2 border border-zinc-800 p-3 rounded-lg bg-zinc-900/50">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Categories</label>
+                      <div className="flex flex-wrap gap-4">
+                        {[
+                          "T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts",
+                          "Denim Jackets", "Plain Tee & Hoodies", "Special for Girls", "Designs"
+                        ].map(cat => (
+                          <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newProduct.categories?.includes(cat)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewProduct({ ...newProduct, categories: [...(newProduct.categories || []), cat] });
+                                } else {
+                                  setNewProduct({ ...newProduct, categories: (newProduct.categories || []).filter(c => c !== cat) });
+                                }
+                              }}
+                              className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
+                            />
+                            <span className="text-sm text-zinc-300">{cat}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Available Fits / Sub Category Options */}
+                    {!(newProduct.categories?.includes("Denim Jackets") && !["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts"].some(c => newProduct.categories?.includes(c))) && (
+                      <div className="space-y-2 col-span-2 mt-2 p-3 border border-zinc-800 rounded-lg bg-zinc-900/50">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Fits / Styles</label>
+                          <span className="text-[9px] text-zinc-500">Selecting Drop Shoulder adds +Rs. 200</span>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                          {["Regular Fit", "Drop Shoulder", "Oversized"].map(fit => (
+                            <label key={fit} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={newProduct.fits?.includes(fit)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setNewProduct({ ...newProduct, fits: [...(newProduct.fits || []), fit] });
+                                  } else {
+                                    setNewProduct({ ...newProduct, fits: (newProduct.fits || []).filter(f => f !== fit) });
+                                  }
+                                }}
+                                className="w-4 h-4 rounded bg-zinc-800 border-zinc-700 text-white focus:ring-white/20"
+                              />
+                              <span className="text-sm text-zinc-300">{fit}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Price (Rs.)</label>
+                      <input
+                        required
+                        type="number"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                        placeholder="1899"
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Compare At Price (Rs.)</label>
+                      <input
+                        type="number"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                        placeholder="e.g. 2499"
+                        value={newProduct.compareAt}
+                        onChange={(e) => setNewProduct({ ...newProduct, compareAt: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Stock Qty</label>
+                      <input
+                        required
+                        type="number"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                        placeholder="100"
+                        value={newProduct.stock}
+                        onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Badge</label>
+                      <input
+                        type="text"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                        placeholder="e.g. Limited Edition, Sale"
+                        value={newProduct.badge}
+                        onChange={(e) => setNewProduct({ ...newProduct, badge: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Colors and Sizes per Color */}
+                  <div className="space-y-4 pt-2 border-t border-zinc-800">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Colors</label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableColors.map((color) => {
+                        const isSelected = newProduct.colors?.some(c => c.colorId === color._id);
+                        return (
+                          <button
+                            key={color._id}
+                            type="button"
+                            onClick={() => handleColorToggle(color)}
+                            className={`px-3 py-2 rounded-lg border transition-all flex items-center gap-2 ${
+                              isSelected
+                                ? "border-accent-red bg-accent-red/10 text-white"
+                                : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                            }`}
+                          >
+                            <div
+                              className="w-3.5 h-3.5 rounded-full border border-white/20"
+                              style={{ backgroundColor: color.hexCode }}
+                            />
+                            <span className="text-xs font-medium">{color.name}</span>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-accent-red" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {newProduct.colors?.length > 0 && (
+                      <div className="space-y-3 mt-4">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Select Sizes for Each Color</label>
+                        <div className="grid grid-cols-1 gap-3">
+                          {newProduct.colors.map(selectedColor => (
+                            <div key={selectedColor.colorId} className="border border-zinc-800 rounded-lg p-3 bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-4 h-4 rounded-full border border-white/20"
+                                  style={{ backgroundColor: selectedColor.hexCode }}
+                                />
+                                <span className="text-sm font-semibold text-white">{selectedColor.name}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {["S", "M", "L", "XL", "XXL"].map((size) => {
+                                  const hasSize = selectedColor.sizes?.includes(size);
+                                  return (
+                                    <button
+                                      key={size}
+                                      type="button"
+                                      onClick={() => handleColorSizeToggle(selectedColor.colorId, size)}
+                                      className={`px-3 py-1 text-xs rounded-md border transition-all font-medium ${
+                                        hasSize
+                                          ? "border-accent-red bg-accent-red text-white"
+                                          : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                                      }`}
+                                    >
+                                      {size}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Images */}
+                  <div className="space-y-2 pt-2 border-t border-zinc-800">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Product Images</label>
+                      {(existingImages.length > 0 || imageFiles.length > 0) && (
+                        <span className="text-[10px] text-zinc-500">{existingImages.length + imageFiles.length} total image(s)</span>
+                      )}
+                    </div>
+
+                    {/* Existing Images (When Editing) */}
+                    {existingImages.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Existing Images:</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {existingImages.map((url, idx) => (
+                            <div key={idx} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                              <img src={url} alt={`Existing ${idx}`} className="w-full h-full object-cover" />
+                              {idx === 0 && (
+                                <div className="absolute top-1 left-1 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none">
+                                  Primary
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeExistingImage(url)}
+                                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                title="Remove image"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload zone for new images */}
+                    <label className="relative group cursor-pointer block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="sr-only"
+                      />
+                      <div className="w-full h-20 border-2 border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center gap-1 group-hover:border-zinc-600 group-hover:bg-zinc-900/80 transition-all bg-zinc-900/50">
+                        <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">Click to upload new images</span>
+                      </div>
+                    </label>
+
+                    {/* Previews of newly selected files */}
+                    {imageFiles.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">New Images to Upload:</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {imageFiles.map((file, i) => {
+                            const url = URL.createObjectURL(file);
+                            return (
+                              <div key={i} className="relative group/img aspect-square rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
+                                <img src={url} alt={file.name} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeNewImage(i)}
+                                  className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Description</label>
+                    <textarea
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 min-h-[90px]"
+                      placeholder="Describe the product details..."
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex gap-3 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -867,11 +1189,21 @@ export default function ProductsPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 px-4 py-2 bg-white text-black rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    modalTab === "kids"
+                      ? "bg-accent-red text-white hover:bg-red-700"
+                      : "bg-white text-black hover:bg-zinc-200"
+                  }`}
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (editingProduct ? "Save Changes" : "Create Product")}
+                  ) : editingProduct ? (
+                    "Save Changes"
+                  ) : modalTab === "kids" ? (
+                    "Create Kids Product"
+                  ) : (
+                    "Create Product"
+                  )}
                 </button>
               </div>
             </form>

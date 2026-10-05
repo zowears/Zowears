@@ -20,7 +20,10 @@ export function ProductCard({ product, index }) {
   const primaryImage = product.images?.find((i) => i.isPrimary)?.url || product.images?.[0]?.url || product.image;
   const hoverImage = product.images?.find((i) => !i.isPrimary)?.url || product.images?.[1]?.url || null;
 
-  const productUrl = `/product${product.mainCategory ? `/${product.mainCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}${product.subCategory ? `/${product.subCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}/${product.slug || product.id}`;
+  const isKids = Boolean(product.isKidsWear || product.productType === "kids" || product.categories?.includes("Kids Wear"));
+  const productUrl = isKids
+    ? `/product/kids-wear/${product.slug || product.id}`
+    : `/product${product.mainCategory ? `/${product.mainCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}${product.subCategory ? `/${product.subCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}/${product.slug || product.id}`;
 
   return (
     <motion.div
@@ -79,13 +82,15 @@ export function ProductCard({ product, index }) {
             <button
               onClick={() => add({
                 productId: product.id,
-                size: "M",
-                color: product.colors[0]?.name || "Onyx",
+                size: product.sizes?.[0] || (isKids ? "2/3" : "M"),
+                color: isKids ? "" : (product.colors?.[0]?.name || "Onyx"),
+                fit: "",
                 qty: 1,
                 name: product.name,
                 price: salePrice,
                 image: primaryImage,
-                category: product.mainCategory
+                category: isKids ? "Kids Wear" : (product.mainCategory || "Apparel"),
+                categories: isKids ? ["Kids Wear"] : product.categories
               })}
               className="flex-1 flex items-center justify-center gap-2 bg-white py-3 text-[9px] font-bold uppercase tracking-[0.15em] text-black hover:bg-accent-red hover:text-white transition-colors rounded-sm shadow-md"
             >
