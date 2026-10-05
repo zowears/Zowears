@@ -43,7 +43,7 @@ export function Categories() {
               transition={{ duration: 0.8, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
             >
               <Link
-                href={c.c ? `/shop?c=${c.c}` : "/shop"}
+                href={`/shop`}
                 className="group relative block aspect-[3/4] sm:aspect-[2/3] lg:aspect-[3/4] overflow-hidden bg-surface rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300"
               >
                 {/* Limited Sale Badge */}

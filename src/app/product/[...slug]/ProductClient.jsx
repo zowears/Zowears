@@ -66,20 +66,26 @@ export default function ProductClient() {
     }
   }, [p]);
 
-  const availableFits = (p?.fits?.length > 0)
-    ? p.fits
-    : (p?.categories?.some(c => ["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", "Plain Tee & Hoodies"].includes(c))
-      ? ["Regular Fit", "Drop Shoulder", "Oversized"]
-      : []);
+  const isKids = Boolean(p?.isKidsWear || p?.productType === "kids" || p?.categories?.includes("Kids Wear"));
+
+  const availableFits = isKids
+    ? []
+    : (p?.fits?.length > 0)
+      ? p.fits
+      : (p?.categories?.some(c => ["T-Shirts", "Hoodies", "Zipper Hoodies", "Sweatshirts", "Plain Tee & Hoodies"].includes(c))
+        ? ["Regular Fit", "Drop Shoulder", "Oversized"]
+        : []);
 
   React.useEffect(() => {
     if (availableFits.length > 0 && (!fit || !availableFits.includes(fit))) {
       setFit(availableFits[0]);
+    } else if (availableFits.length === 0) {
+      setFit("");
     }
   }, [p, availableFits, fit]);
 
   const checkExtraPrice = (f) => {
-    if (!f) return false;
+    if (!f || isKids) return false;
     const lower = f.toLowerCase();
     return lower.includes("drop") || lower.includes("shoulder") || lower.includes("oversized") || lower.includes("oversize") || !lower.includes("regular");
   };
@@ -90,18 +96,25 @@ export default function ProductClient() {
 
   React.useEffect(() => {
     if (p) {
-      const defaultColor = p.colors[0]?.name || "Onyx";
-      setColor(defaultColor);
+      if (isKids) {
+        setColor("");
+        setSize(p.sizes?.[0] || "");
+      } else {
+        const defaultColor = p.colors?.[0]?.name || "Onyx";
+        setColor(defaultColor);
 
-      const colorObj = p.colors?.find(c => c.name === defaultColor);
-      const sizesForColor = (colorObj?.sizes?.length > 0) ? colorObj.sizes : p.sizes;
+        const colorObj = p.colors?.find(c => c.name === defaultColor);
+        const sizesForColor = (colorObj?.sizes?.length > 0) ? colorObj.sizes : p.sizes;
 
-      setSize(sizesForColor?.[1] ?? sizesForColor?.[0]);
+        setSize(sizesForColor?.[1] ?? sizesForColor?.[0] ?? "");
+      }
     }
-  }, [p]);
+  }, [p, isKids]);
 
   const selectedColorObj = p?.colors?.find(c => c.name === color);
-  const availableSizes = selectedColorObj?.sizes?.length > 0 ? selectedColorObj.sizes : (p?.sizes || []);
+  const availableSizes = isKids
+    ? (p?.sizes || [])
+    : (selectedColorObj?.sizes?.length > 0 ? selectedColorObj.sizes : (p?.sizes || []));
 
   React.useEffect(() => {
     if (availableSizes.length > 0 && !availableSizes.includes(size)) {
@@ -122,8 +135,8 @@ export default function ProductClient() {
       <div className="mx-auto max-w-xl px-4 py-32 text-center">
         <h1 className="font-display text-5xl font-bold">404</h1>
         <p className="mt-4 text-muted-foreground uppercase tracking-[0.4em] text-[10px]">Silhouette not found</p>
-        <Link href="/shop" className="mt-12 inline-block border border-foreground px-12 py-4 text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-foreground hover:text-background transition-colors">
-          Return to Collective
+        <Link href={isKids ? "/kids-wear" : "/shop"} className="mt-12 inline-block border border-foreground px-12 py-4 text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-foreground hover:text-background transition-colors">
+          Return to {isKids ? "Kids Collection" : "Collective"}
         </Link>
       </div>
     );
@@ -134,31 +147,47 @@ export default function ProductClient() {
     p.image,
   ].filter((src) => typeof src === "string" && src.trim() !== "");
   const gallery = Array.from(new Set(rawGallery));
-  const related = (allProducts || []).filter((x) => x.id !== p.id).slice(0, 4);
+  const related = (allProducts || []).filter((x) => {
+    if (x.id === p.id) return false;
+    const xIsKids = Boolean(x.isKidsWear || x.productType === "kids" || x.categories?.includes("Kids Wear"));
+    return isKids ? xIsKids : !xIsKids;
+  }).slice(0, 4);
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 pb-24 pt-24 md:px-8 md:pt-32">
       <div className="mb-10 flex items-center justify-between">
         <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground flex-wrap">
-          {p.categories?.includes("Special for Girls") ? (
+          {isKids ? (
             <>
-              <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Girls Wear</Link>
+              <Link href="/" className="hover:text-accent-red">Home</Link>
               <span className="text-white/10">/</span>
-              <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Special for Girls</Link>
+              <Link href="/kids-wear" className="hover:text-accent-red">Kids Wear</Link>
+              <span className="text-white/10">/</span>
+              <span className="text-foreground">{p.name}</span>
             </>
           ) : (
-            <Link href="/shop" className="hover:text-accent-red">Shop All</Link>
-          )}
-          {p.categories?.filter(c => c !== "Special for Girls").map(cat => (
-            <React.Fragment key={cat}>
-              <span className="text-white/10">/</span>
-              <Link href={`/shop?c=${encodeURIComponent(cat)}`} className="hover:text-accent-red">{cat}</Link>
-            </React.Fragment>
-          ))}
-          {fit && (
             <>
-              <span className="text-white/10">/</span>
-              <span className="text-foreground">{fit}</span>
+              {p.categories?.includes("Special for Girls") ? (
+                <>
+                  <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Girls Wear</Link>
+                  <span className="text-white/10">/</span>
+                  <Link href="/shop?c=Special for Girls" className="hover:text-accent-red">Special for Girls</Link>
+                </>
+              ) : (
+                <Link href="/shop" className="hover:text-accent-red">Shop All</Link>
+              )}
+              {p.categories?.filter(c => c !== "Special for Girls").map(cat => (
+                <React.Fragment key={cat}>
+                  <span className="text-white/10">/</span>
+                  <Link href={`/shop?c=${encodeURIComponent(cat)}`} className="hover:text-accent-red">{cat}</Link>
+                </React.Fragment>
+              ))}
+              {fit && (
+                <>
+                  <span className="text-white/10">/</span>
+                  <span className="text-foreground">{fit}</span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -293,44 +322,55 @@ export default function ProductClient() {
                 </div>
               )}
 
-              <div>
-                <div className="mb-6 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Select Silhouette</span>
-                  <span className="text-[10px] font-bold text-muted-foreground">{size}</span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {availableSizes.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setSize(s)}
-                      className={`flex h-14 min-w-[3.5rem] items-center justify-center border text-[11px] font-bold transition-all ${size === s ? "border-accent-red bg-accent-red text-white" : "border-white/5 hover:border-white/20"
+              {availableSizes.length > 0 && (
+                <div>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">
+                      {isKids ? "Select Age Size" : "Select Silhouette"}
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground">
+                      {size} {isKids && size ? "Years" : ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {availableSizes.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSize(s)}
+                        className={`flex h-14 min-w-[3.5rem] px-4 items-center justify-center border text-[11px] font-bold transition-all ${
+                          size === s
+                            ? "border-accent-red bg-accent-red text-white"
+                            : "border-white/5 hover:border-white/20"
                         }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
+                      >
+                        {s} {isKids ? "Yrs" : ""}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <div className="mb-6 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Choose Palette</span>
-                  <span className="text-[10px] font-bold text-muted-foreground">{color}</span>
+              {!isKids && p.colors?.length > 0 && (
+                <div>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent-red">Choose Palette</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">{color}</span>
+                  </div>
+                  <div className="flex gap-4">
+                    {p.colors.map((c) => (
+                      <button
+                        key={c.name}
+                        onClick={() => setColor(c.name)}
+                        className={`group relative h-12 w-12 rounded-full border border-white/10 p-1.5 transition-transform hover:scale-110 ${color === c.name ? "ring-1 ring-accent-red" : ""}`}
+                        style={{ background: c.hexCode }}
+                        aria-label={c.name}
+                      >
+                        <div className={`absolute inset-0 rounded-full border-2 border-white/0 transition-all ${color === c.name ? "border-white/40" : "group-hover:border-white/20"}`} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-4">
-                  {p.colors.map((c) => (
-                    <button
-                      key={c.name}
-                      onClick={() => setColor(c.name)}
-                      className={`group relative h-12 w-12 rounded-full border border-white/10 p-1.5 transition-transform hover:scale-110 ${color === c.name ? "ring-1 ring-accent-red" : ""}`}
-                      style={{ background: c.hexCode }}
-                      aria-label={c.name}
-                    >
-                      <div className={`absolute inset-0 rounded-full border-2 border-white/0 transition-all ${color === c.name ? "border-white/40" : "group-hover:border-white/20"}`} />
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -349,13 +389,14 @@ export default function ProductClient() {
                 onClick={() => add({
                   productId: p.id,
                   size,
-                  color,
-                  fit,
+                  color: isKids ? "" : color,
+                  fit: isKids ? "" : fit,
                   qty,
                   name: p.name,
                   price: effectivePrice,
                   image: p.images?.[0]?.url || p.images?.[0] || p.image,
-                  categories: p.categories
+                  category: isKids ? "Kids Wear" : (p.mainCategory || p.categories?.[0] || "Apparel"),
+                  categories: isKids ? ["Kids Wear"] : p.categories
                 })}
               >
                 <span className="relative z-10 flex items-center justify-center gap-3">
@@ -378,7 +419,7 @@ export default function ProductClient() {
             {/* Fabric Info */}
             <div className="mt-10 flex items-center gap-4 bg-white/5 p-4">
               <Info className="h-4 w-4 text-accent-red" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Fabrication · {p.fabric}</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Fabrication · {p.fabric || (isKids ? "100% Breathable Combed Cotton" : "Artisanal Cotton")}</span>
             </div>
 
             {/* Accordions */}
@@ -386,7 +427,7 @@ export default function ProductClient() {
               {[
                 { q: "Care Instructions", a: "Cold wash, inside out. Do not tumble dry the embroidered pieces. Iron low if needed." },
                 { q: "Collective Promise", a: "Every piece is a numbered part of the Zowears Collective. We ensure ethical manufacturing and artisanal finishing." },
-                { q: "Silhouette Details", a: "True oversized drop. Order your usual size for an oversized look, size down for relaxed. Our fabrics are custom-knit for a substantial feel and structural drape." },
+                { q: isKids ? "Kids Fit & Sizing" : "Silhouette Details", a: isKids ? "Tailored to child age benchmarks (2-12 years). Crafted from lightweight, ultra-soft pure cotton with gentle stretch for active young originals." : "True oversized drop. Order your usual size for an oversized look, size down for relaxed. Our fabrics are custom-knit for a substantial feel and structural drape." },
               ].map((f, i) => (
                 <div key={i}>
                   <button
@@ -418,8 +459,12 @@ export default function ProductClient() {
       {/* Related */}
       <div className="mt-32">
         <div className="mb-12 flex items-center justify-between">
-          <h2 className="font-display text-4xl font-bold tracking-tight">Complete the fit</h2>
-          <Link href="/shop" className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red underline underline-offset-8">View all pieces</Link>
+          <h2 className="font-display text-4xl font-bold tracking-tight">
+            {isKids ? "More for kids" : "Complete the fit"}
+          </h2>
+          <Link href={isKids ? "/kids-wear" : "/shop"} className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-red underline underline-offset-8">
+            View all {isKids ? "kids pieces" : "pieces"}
+          </Link>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-16 md:grid-cols-4 md:gap-x-8">
           {related.map((r, i) => <ProductCard key={r.id} product={r} index={i} />)}

@@ -36,18 +36,34 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/admin/login`, {
+      let res = await fetch(`${API_URL}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
 
+      // If backend is unavailable or not found, fallback to Next.js internal api route
+      if (!res.ok && res.status !== 401 && res.status !== 429) {
+        try {
+          const fallbackRes = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+          });
+          if (fallbackRes.ok || fallbackRes.status === 401 || fallbackRes.status === 429) {
+            res = fallbackRes;
+          }
+        } catch {}
+      }
+
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem("admin_token", data.token);
-        // Also set a client-side cookie so layout/middleware checks can read it if needed
-        document.cookie = `__admin_token_client=${data.token}; path=/; max-age=28800; SameSite=Strict`;
-        router.replace("/admin");
+        if (data.token) {
+          localStorage.setItem("admin_token", data.token);
+          document.cookie = `__admin_token=${data.token}; path=/; max-age=28800; SameSite=Lax`;
+          document.cookie = `__admin_token_client=${data.token}; path=/; max-age=28800; SameSite=Lax`;
+        }
+        window.location.href = "/admin";
         return;
       }
 

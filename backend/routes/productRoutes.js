@@ -46,6 +46,30 @@ router.get('/', async (req, res) => {
       const cats = req.query.categories.split(',');
       query.categories = { $in: cats };
     }
+
+    // Filter by productType
+    if (req.query.productType) {
+      query.productType = req.query.productType;
+    }
+
+    // Filter by isKidsWear
+    if (req.query.isKidsWear !== undefined) {
+      query.isKidsWear = req.query.isKidsWear === 'true';
+    }
+
+    // Exclude kids products (for Shop All)
+    // Uses $nor to prevent overwriting other category filters and to correctly
+    // exclude any document where isKidsWear=true, productType='kids', or categories contains 'Kids Wear'
+    if (req.query.excludeKids === 'true') {
+      query.$nor = [
+        { isKidsWear: true },
+        { productType: 'kids' },
+        { categories: 'Kids Wear' }
+      ];
+      // Remove individual keys that may conflict
+      delete query.isKidsWear;
+      delete query.productType;
+    }
     
     // Filter by price range
     if (req.query.minPrice || req.query.maxPrice) {
@@ -203,6 +227,8 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       description,
       categories,
+      productType,
+      isKidsWear,
       brand,
       status,
       isFeatured,
@@ -219,10 +245,20 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       badge
     } = req.body;
 
-    if (!name || !categories || !price) {
-      return res.status(400).json({ 
-        message: 'Name, categories, and price are required' 
-      });
+    const isKids = productType === 'kids' || isKidsWear === 'true' || isKidsWear === true;
+
+    if (isKids) {
+      if (!name || !price) {
+        return res.status(400).json({
+          message: 'Name and price are required for Kids Wear products'
+        });
+      }
+    } else {
+      if (!name || !categories || !price) {
+        return res.status(400).json({
+          message: 'Name, categories, and price are required'
+        });
+      }
     }
 
     let parsedCategories = [];
@@ -232,6 +268,9 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       } catch (e) {
         parsedCategories = Array.isArray(categories) ? categories : [];
       }
+    }
+    if (isKids && (!parsedCategories || parsedCategories.length === 0)) {
+      parsedCategories = ['Kids Wear'];
     }
 
     // Process images
@@ -244,7 +283,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
 
     // Parse colors (if sent as JSON string)
     let parsedColors = [];
-    if (colors) {
+    if (!isKids && colors) {
       try {
         parsedColors = typeof colors === 'string' ? JSON.parse(colors) : colors;
       } catch (e) {
@@ -263,7 +302,7 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
     }
 
     let parsedFits = [];
-    if (fits) {
+    if (!isKids && fits) {
       try {
         parsedFits = typeof fits === 'string' ? JSON.parse(fits) : fits;
       } catch (e) {
@@ -275,7 +314,9 @@ router.post('/', auth, upload.array('images', 10), async (req, res) => {
       name,
       description,
       categories: parsedCategories,
-      brand,
+      productType: isKids ? 'kids' : (productType || 'apparel'),
+      isKidsWear: isKids,
+      brand: brand || 'Zowears',
       status: status || 'active',
       isFeatured: isFeatured === 'true' || isFeatured === true,
       costPrice: Number(costPrice) || 0,
@@ -308,6 +349,8 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
       name,
       description,
       categories,
+      productType,
+      isKidsWear,
       brand,
       status,
       isFeatured,
@@ -332,6 +375,8 @@ router.patch('/:id', auth, upload.array('images', 10), async (req, res) => {
 
     // Update basic info
     if (name) product.name = name;
+    if (productType !== undefined) product.productType = productType;
+    if (isKidsWear !== undefined) product.isKidsWear = isKidsWear === 'true' || isKidsWear === true;
     if (description !== undefined) product.description = description;
     if (categories !== undefined) {
       try {

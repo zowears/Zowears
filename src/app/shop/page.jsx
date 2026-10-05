@@ -26,8 +26,8 @@ function ShopContent() {
   const initialCat = searchParams.get("c") || undefined;
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["shop-products"],
-    queryFn: () => fetchProducts(),
+    queryKey: ["shop-products", "exclude-kids"],
+    queryFn: () => fetchProducts(1, 100, { excludeKids: true }),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
@@ -59,7 +59,10 @@ function ShopContent() {
 
   const filtered = React.useMemo(() => {
     if (!products) return [];
-    let list = [...products];
+    // Ensure adult products only: exclude any kids wear
+    let list = products.filter(
+      (p) => !p.isKidsWear && p.productType !== "kids" && !p.categories?.includes("Kids Wear")
+    );
     if (selectedCats.length > 0) {
       list = list.filter((p) => {
         const pCats = p.categories || [];
