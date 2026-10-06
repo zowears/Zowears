@@ -14,7 +14,6 @@ export async function fetchProducts(page = 1, limit = 100, options = {}) {
     
     // Handle both paginated and flat response formats for backward compatibility
     const products = Array.isArray(result) ? result : (result.data || []);
-    
     // Map MongoDB _id to id and provide defaults for missing fields
     return products.map(p => {
       const isKids = p.productType === 'kids' || p.isKidsWear || p.categories?.includes("Kids Wear");
