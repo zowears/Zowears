@@ -10,7 +10,6 @@ export const metadata = {
     type: "website",
   },
 };
-
 export default function KidsWearLayout({ children }) {
   return children;
 }
