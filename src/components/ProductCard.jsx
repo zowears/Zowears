@@ -9,7 +9,6 @@ import { formatPrice } from "@/lib/products";
 
 export function ProductCard({ product, index }) {
   const { add } = useCart();
-
   const discount = product.discountPercentage || 20;
   // product.price IS the actual selling price — do NOT discount it further
   const salePrice = product.price;
