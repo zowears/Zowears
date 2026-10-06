@@ -15,7 +15,6 @@ export default function ProductClient() {
   const params = useParams();
   const slugArray = params.slug || [];
   const idOrSlug = slugArray[slugArray.length - 1];
-
   const { data: p, isLoading } = useQuery({
     queryKey: ["product", idOrSlug],
     queryFn: () => fetchProduct(idOrSlug),
