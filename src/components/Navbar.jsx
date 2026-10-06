@@ -11,7 +11,6 @@ import Logo from "@/assets/Zowear.png";
 import Image from "next/image";
 import { formatPrice } from "@/lib/products";
 
-
 const nav = [
   { label: "Shop All", to: "/shop" },
   { label: "Kids Wear", to: "/kids-wear" },
