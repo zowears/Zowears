@@ -27,7 +27,6 @@ export async function generateMetadata({ params }) {
         : `Buy ${product.name} online in Pakistan. Premium heavyweight oversized fit with detailed embroidery.`;
         
       const description = `${cleanDesc}... Express shipping available across Pakistan.`;
-      
       const imageUrl = product.images?.[0]?.url || product.images?.[0] || product.image;
 
       return {
