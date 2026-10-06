@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
+
 // In-memory store: { ip -> { count, resetAt } }
 // NOTE: On serverless (Vercel) this resets per cold-start.
 // For persistent rate limiting in production, upgrade to Redis (e.g. Upstash).
