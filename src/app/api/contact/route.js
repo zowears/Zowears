@@ -8,7 +8,6 @@ export async function POST(request) {
     if (!name?.trim() || !email?.trim() || !subject?.trim() || !message?.trim()) {
       return Response.json({ success: false, error: 'All fields are required.' }, { status: 400 });
     }
-
     // Build transporter using Gmail SMTP (same creds as backend)
     const transporter = nodemailer.createTransport({
       service: process.env.SMTP_SERVICE || 'gmail',
