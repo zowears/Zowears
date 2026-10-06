@@ -6,6 +6,7 @@ import { upload } from '../config/cloudinary.js';
 import auth from '../middleware/auth.js';
 
 // Helper to resolve category ID from ObjectId, Slug, or Name
+
 const resolveCategoryId = async (categoryInput) => {
   if (!categoryInput) return null;
   
