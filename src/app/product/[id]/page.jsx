@@ -18,7 +18,6 @@ export default function ProductPage() {
     queryFn: () => fetchProduct(params.id),
     enabled: !!params.id,
   });
-
   const { data: allProducts } = useQuery({
     queryKey: ["shop-products"],
     queryFn: fetchProducts,
