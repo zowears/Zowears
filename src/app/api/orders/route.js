@@ -9,7 +9,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
   }
 }
-
 export async function POST(request) {
   try {
     const body = await request.json();
