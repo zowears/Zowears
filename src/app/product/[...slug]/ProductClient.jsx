@@ -9,6 +9,7 @@ import { Heart, Truck, Shield, RefreshCw, Minus, Plus, ChevronDown, ChevronLeft,
 import { useQuery } from "@tanstack/react-query";
 import { fetchProduct, fetchProducts, formatPrice } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useCart } from "@/context/cart";
 import { cdnImage, isCloudinary } from "@/lib/imageLoader";
 
@@ -128,12 +129,12 @@ export default function ProductClient() {
     }
   }, [color, availableSizes, size]);
 
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [idOrSlug]);
+
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-accent-red" />
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!p) {
@@ -489,6 +490,116 @@ function InfoItem({ icon, title, subtitle }) {
       <div className="text-accent-red">{icon}</div>
       <div className="text-[10px] font-bold uppercase tracking-[0.2em]">{title}</div>
       <div className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60">{subtitle}</div>
+    </div>
+  );
+}
+
+function ProductDetailSkeleton() {
+  return (
+    <div className="mx-auto max-w-[1600px] px-4 pb-24 pt-24 md:px-8 md:pt-32 animate-pulse">
+      {/* Breadcrumb Skeleton */}
+      <div className="mb-10 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-16 rounded bg-white/10" />
+          <span className="text-white/20">/</span>
+          <div className="h-3 w-28 rounded bg-white/10" />
+          <span className="text-white/20">/</span>
+          <div className="h-3 w-40 rounded bg-white/10" />
+        </div>
+        <div className="h-4 w-16 rounded bg-white/10" />
+      </div>
+
+      <div className="grid gap-16 md:grid-cols-12">
+        {/* Left: Gallery Skeleton */}
+        <div className="md:col-span-7">
+          <div className="grid grid-cols-12 gap-4">
+            {/* Thumbnails */}
+            <div className="hidden md:block md:order-1 md:col-span-2">
+              <div className="flex flex-col gap-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="aspect-[3/4] rounded-lg bg-surface border border-white/5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Main Image Box */}
+            <div className="order-1 col-span-12 md:order-2 md:col-span-10">
+              <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface border border-white/5">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Info Skeleton */}
+        <div className="md:col-span-5 space-y-8">
+          <div className="space-y-4">
+            <div className="h-4 w-20 rounded bg-accent-red/20" />
+            <div className="h-10 w-4/5 rounded bg-white/10" />
+            <div className="flex items-center gap-3">
+              <div className="h-7 w-28 rounded bg-white/10" />
+              <div className="h-5 w-20 rounded bg-white/5" />
+            </div>
+          </div>
+
+          {/* Fit Selector Skeleton */}
+          <div className="space-y-3">
+            <div className="h-3 w-24 rounded bg-white/10" />
+            <div className="h-11 w-full rounded border border-white/10 bg-surface/50" />
+          </div>
+
+          {/* Color Selector Skeleton */}
+          <div className="space-y-3">
+            <div className="h-3 w-20 rounded bg-white/10" />
+            <div className="flex gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-8 w-8 rounded-full border border-white/10 bg-white/5" />
+              ))}
+            </div>
+          </div>
+
+          {/* Size Pills Skeleton */}
+          <div className="space-y-3">
+            <div className="h-3 w-24 rounded bg-white/10" />
+            <div className="flex gap-2">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-10 w-12 rounded border border-white/10 bg-surface/50" />
+              ))}
+            </div>
+          </div>
+
+          {/* Quantity & CTA Skeleton */}
+          <div className="flex gap-4 pt-4">
+            <div className="h-14 w-32 rounded border border-white/10 bg-surface/50" />
+            <div className="h-14 flex-1 rounded bg-accent-red/40" />
+          </div>
+
+          {/* Features Skeleton */}
+          <div className="grid grid-cols-3 gap-4 border-y border-white/10 py-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-white/10" />
+                <div className="h-3 w-16 rounded bg-white/10" />
+                <div className="h-2 w-12 rounded bg-white/5" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Related Products Skeleton */}
+      <div className="mt-32">
+        <div className="mb-12 flex items-center justify-between">
+          <div className="h-8 w-48 rounded bg-white/10" />
+          <div className="h-3 w-24 rounded bg-white/10" />
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-16 md:grid-cols-4 md:gap-x-8">
+          {[0, 1, 2, 3].map((i) => (
+            <ProductSkeleton key={i} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

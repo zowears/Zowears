@@ -53,6 +53,15 @@ function KidsWearContent() {
     setPage(1);
   }, [selectedSizes, sort]);
 
+  const isInitialPageLoad = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialPageLoad.current) {
+      isInitialPageLoad.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
+
   // Toggle or select a size
   const toggleSize = (sz) => {
     setSelectedSizes((prev) => {

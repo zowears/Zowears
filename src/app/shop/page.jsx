@@ -47,6 +47,15 @@ function ShopContent() {
     setPage(1);
   }, [selectedCats, price, sort]);
 
+  const isInitialPageLoad = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialPageLoad.current) {
+      isInitialPageLoad.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
+
   React.useEffect(() => {
     const c = searchParams.get("c");
     if (c) {

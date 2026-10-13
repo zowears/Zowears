@@ -6,9 +6,9 @@ export function ProductSkeleton() {
   return (
     <div className="group animate-pulse">
       {/* Image Skeleton Box */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-white/5 border border-white/5 shadow-sm">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface/80 border border-white/5 shadow-sm">
         {/* Shimmer overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
         
         {/* Top left badge skeleton */}
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
