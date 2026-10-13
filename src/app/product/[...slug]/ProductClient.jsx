@@ -10,10 +10,17 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProduct, fetchProducts, formatPrice } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/context/cart";
+import { cdnImage, isCloudinary } from "@/lib/imageLoader";
 
 export default function ProductClient() {
   const params = useParams();
-  const slugArray = params.slug || [];
+  const slugArray = Array.isArray(params.slug)
+    ? params.slug
+    : params.slug
+    ? [params.slug]
+    : params.id
+    ? [params.id]
+    : [];
   const idOrSlug = slugArray[slugArray.length - 1];
   const { data: p, isLoading } = useQuery({
     queryKey: ["product", idOrSlug],
@@ -206,7 +213,7 @@ export default function ProductClient() {
                       className={`relative aspect-[3/4] flex-1 overflow-hidden bg-surface transition-all md:flex-none ${i === img ? "ring-1 ring-accent-red" : "opacity-60 hover:opacity-100"}`}
                     >
                       <div className="relative h-full w-full">
-                        <Image src={src} alt={`${p.name} - Thumbnail view`} fill sizes="100px" className="object-cover" />
+                        <Image src={cdnImage(src, 200)} unoptimized={isCloudinary(src)} alt={`${p.name} - Thumbnail view`} fill sizes="100px" className="object-cover" />
                       </div>
                     </button>
                   ) : null
@@ -223,16 +230,19 @@ export default function ProductClient() {
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => setMousePos({ x: "50%", y: "50%" })}
               >
-                <Image
-                  src={gallery[img]}
-                  alt={`${p.name} - Premium Embroidered ${p.categories?.[0] || 'Streetwear'} in Pakistan`}
-                  fill
-                  priority
-                  quality={100}
-                  unoptimized={true}
-                  className="object-cover transition-transform duration-150 ease-out group-hover:scale-250"
-                  style={{ transformOrigin: `${mousePos.x} ${mousePos.y}` }}
-                />
+                {gallery[img] ? (
+                  <Image
+                    src={cdnImage(gallery[img], 1400)}
+                    unoptimized={isCloudinary(gallery[img])}
+                    alt={`${p.name} - Premium Embroidered ${p.categories?.[0] || 'Streetwear'} in Pakistan`}
+                    fill
+                    priority
+                    quality={100}
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    className="object-cover transition-transform duration-150 ease-out group-hover:scale-250"
+                    style={{ transformOrigin: `${mousePos.x} ${mousePos.y}` }}
+                  />
+                ) : null}
               </motion.div>
               
               {gallery.length > 1 && (

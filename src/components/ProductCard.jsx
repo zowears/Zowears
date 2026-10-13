@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ShoppingBag, Heart, Tag, Eye } from "lucide-react";
 import { useCart } from "@/context/cart";
 import { formatPrice } from "@/lib/products";
+import { cdnImage, isCloudinary } from "@/lib/imageLoader";
 
 export function ProductCard({ product, index }) {
   const { add } = useCart();
@@ -15,9 +16,14 @@ export function ProductCard({ product, index }) {
   // The struck-through "was" price: use compareAt from DB, or back-calculate MRP
   const mrp = product.compareAt || Math.round(salePrice / (1 - discount / 100));
 
-  // Get second image for hover if available
-  const primaryImage = product.images?.find((i) => i.isPrimary)?.url || product.images?.[0]?.url || product.image;
-  const hoverImage = product.images?.find((i) => !i.isPrimary)?.url || product.images?.[1]?.url || null;
+  const getImgUrl = (img) => {
+    if (!img) return null;
+    if (typeof img === "string") return img;
+    return img.url || null;
+  };
+
+  const primaryImage = getImgUrl(product.images?.find((i) => i?.isPrimary)) || getImgUrl(product.images?.[0]) || getImgUrl(product.image);
+  const hoverImage = getImgUrl(product.images?.find((i) => !i?.isPrimary && (i?.url || i) !== primaryImage)) || (product.images?.[1] ? getImgUrl(product.images[1]) : null);
 
   const isKids = Boolean(product.isKidsWear || product.productType === "kids" || product.categories?.includes("Kids Wear"));
   const productUrl = isKids
@@ -36,17 +42,21 @@ export function ProductCard({ product, index }) {
       <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface shadow-sm group-hover:shadow-lg transition-shadow duration-500">
         <Link href={productUrl} className="relative block h-full w-full">
           {/* Primary Image */}
-          <Image
-            src={primaryImage}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            className={`object-cover transition-all duration-700 ${hoverImage ? 'group-hover:opacity-0' : 'group-hover:scale-110'}`}
-          />
+          {primaryImage && (
+            <Image
+              src={cdnImage(primaryImage, 600)}
+              unoptimized={isCloudinary(primaryImage)}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              className={`object-cover transition-all duration-700 ${hoverImage ? 'group-hover:opacity-0' : 'group-hover:scale-110'}`}
+            />
+          )}
           {/* Hover Image (2nd image) */}
           {hoverImage && (
             <Image
-              src={hoverImage}
+              src={cdnImage(hoverImage, 600)}
+              unoptimized={isCloudinary(hoverImage)}
               alt={`${product.name} alternate`}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"

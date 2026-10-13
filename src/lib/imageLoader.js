@@ -1,4 +1,12 @@
-'use client';
+export function isCloudinary(src) {
+  return typeof src === 'string' && src.includes('res.cloudinary.com');
+}
+
+// Build a resized Cloudinary CDN URL (f_auto, q_auto, width-limited).
+export function cdnImage(src, width = 800, quality) {
+  if (!isCloudinary(src)) return src;
+  return cloudinaryLoader({ src, width, quality });
+}
 
 export default function cloudinaryLoader({ src, width, quality }) {
   if (!src || typeof src !== 'string') {

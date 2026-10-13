@@ -5,7 +5,13 @@ import { fetchProduct } from "@/lib/products";
 export async function generateMetadata({ params }) {
   // Next.js 16: params is a Promise — must be awaited
   const resolvedParams = await params;
-  const slugArray = resolvedParams.slug || [];
+  const slugArray = Array.isArray(resolvedParams.slug)
+    ? resolvedParams.slug
+    : resolvedParams.slug
+    ? [resolvedParams.slug]
+    : resolvedParams.id
+    ? [resolvedParams.id]
+    : [];
   const idOrSlug = slugArray[slugArray.length - 1];
 
   if (!idOrSlug) {
