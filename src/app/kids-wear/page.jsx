@@ -31,7 +31,6 @@ function KidsWearContent() {
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
-
   const [grid, setGrid] = React.useState(true);
   const [drawer, setDrawer] = React.useState(false);
   const [selectedSizes, setSelectedSizes] = React.useState(() => {

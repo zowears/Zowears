@@ -12,7 +12,6 @@ import colorRoutes from './routes/colorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 
-
 const app = express();
 
 // Middleware - Database connection for serverless

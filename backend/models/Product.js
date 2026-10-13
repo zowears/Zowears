@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
     type: String,
     index: true
   }],
+  
   fits: [{
     type: String
   }],

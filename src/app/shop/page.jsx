@@ -10,7 +10,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 
 const sizes = ["M", "L", "XL"];
-
 const filterCategories = [
   "T-Shirts",
   "Hoodies",

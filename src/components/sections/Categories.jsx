@@ -9,7 +9,6 @@ import cat1 from "@/assets/oversized-tshirts-pakistan.jpg";
 import cat2 from "@/assets/heavyweight-embroidered-hoodies.jpg";
 import cat4 from "@/assets/anime-streetwear-pakistan.jpg";
 import cat5 from "@/assets/puff-printing-new-arrivals.jpg";
-
 const cats = [
   { name: "Oversized Tees", img: cat1, c: "t-shirts", price: 1999, discount: 20 },
   { name: "Heavy Hoodies", img: cat2, c: "hoodies", price: 2899, discount: 15 },

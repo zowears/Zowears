@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
-
 // In-memory rate limiter: { ip -> { count, resetAt } }
 const attempts = new Map();
 const MAX_ATTEMPTS = 5;

@@ -34,7 +34,6 @@ export default function AdminLoginPage() {
 
     setLoading(true);
     setError("");
-
     try {
       let res = await fetch(`${API_URL}/admin/login`, {
         method: "POST",

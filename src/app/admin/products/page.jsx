@@ -44,7 +44,6 @@ export default function ProductsPage() {
   const [imageFiles, setImageFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [removeImages, setRemoveImages] = useState([]);
-
   const [newProduct, setNewProduct] = useState({
     name: "",
     productType: "apparel",

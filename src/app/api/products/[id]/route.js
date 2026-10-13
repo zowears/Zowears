@@ -9,7 +9,6 @@ export async function GET(request, { params }) {
   }
   return NextResponse.json(product);
 }
-
 export async function PUT(request, { params }) {
   const { id } = params;
   try {
