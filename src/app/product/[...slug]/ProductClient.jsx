@@ -12,6 +12,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
 import { useCart } from "@/context/cart";
 import { cdnImage, isCloudinary } from "@/lib/imageLoader";
+import { trackViewContent } from "@/lib/analytics";
 
 export default function ProductClient() {
   const params = useParams();
@@ -57,19 +58,12 @@ export default function ProductClient() {
   React.useEffect(() => {
     if (p && !viewTracked.current) {
       viewTracked.current = true;
-      fetch(`http://localhost:5000/api/analytics/product/${p.id}`, {
+      trackViewContent(p);
+
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      fetch(`${backendUrl}/analytics/product/${p.id}`, {
         method: "POST"
       }).catch(console.error);
-
-      if (typeof window !== "undefined" && window.fbq) {
-        window.fbq("track", "ViewContent", {
-          content_name: p.name,
-          content_ids: [p.id],
-          content_type: 'product',
-          value: p.price,
-          currency: 'PKR'
-        });
-      }
     }
   }, [p]);
 

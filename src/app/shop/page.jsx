@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import { trackViewCategory } from "@/lib/analytics";
 
 const sizes = ["M", "L", "XL"];
 const filterCategories = [
@@ -55,6 +56,15 @@ function ShopContent() {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
+
+  const categoryTracked = React.useRef(false);
+  React.useEffect(() => {
+    if (products && products.length > 0 && !categoryTracked.current) {
+      categoryTracked.current = true;
+      const currentCategory = selectedCats.length > 0 ? selectedCats.join(", ") : "All Collections";
+      trackViewCategory(currentCategory, products.length);
+    }
+  }, [products, selectedCats]);
 
   React.useEffect(() => {
     const c = searchParams.get("c");

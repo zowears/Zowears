@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import { trackViewCategory } from "@/lib/analytics";
 
 const KIDS_SIZES = [
   "2/3",
@@ -61,6 +62,14 @@ function KidsWearContent() {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page]);
+
+  const categoryTracked = React.useRef(false);
+  React.useEffect(() => {
+    if (kidsProducts && kidsProducts.length > 0 && !categoryTracked.current) {
+      categoryTracked.current = true;
+      trackViewCategory("Kids Wear", kidsProducts.length);
+    }
+  }, [kidsProducts]);
 
   // Toggle or select a size
   const toggleSize = (sz) => {

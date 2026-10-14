@@ -35,6 +35,7 @@ import {
   validateEmailFormat,
   isLocationMismatch,
 } from "@/lib/validation";
+import { trackInitiateCheckout, trackAddPaymentInfo, trackPurchase } from "@/lib/analytics";
 
 const steps = ["Address", "Shipping", "Payment"];
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -76,28 +77,26 @@ export default function CheckoutPage() {
 
   React.useEffect(() => {
     // Track InitiateCheckout
-    if (items.length > 0 && typeof window !== "undefined" && window.fbq) {
+    if (items.length > 0) {
       if (!window.__checkoutTracked) {
         window.__checkoutTracked = true;
-        window.fbq("track", "InitiateCheckout", {
-          num_items: items.reduce((sum, item) => sum + item.qty, 0),
-          value: subtotal,
-          currency: 'PKR'
-        });
+        trackInitiateCheckout(items, subtotal);
       }
     }
   }, [items, subtotal]);
 
   React.useEffect(() => {
     if (createdOrder && createdOrder.items) {
-      if (typeof window !== "undefined" && window.fbq && !window.__purchaseTracked) {
+      if (!window.__purchaseTracked) {
         window.__purchaseTracked = true;
-        window.fbq("track", "Purchase", {
-          content_ids: createdOrder.items.map((it) => it.productId),
-          content_type: 'product',
-          value: createdOrder.totalAmount,
-          currency: 'PKR'
-        }, { eventID: createdOrder._id });
+        trackPurchase(createdOrder, {
+          email: createdOrder.email,
+          phone: createdOrder.shippingAddress?.phone,
+          firstName: createdOrder.shippingAddress?.firstName,
+          lastName: createdOrder.shippingAddress?.lastName,
+          city: createdOrder.shippingAddress?.city,
+          zip: createdOrder.shippingAddress?.zip,
+        });
       }
 
       const digitalItems = createdOrder.items.filter(
@@ -438,6 +437,14 @@ export default function CheckoutPage() {
   const expressShippingCost = subtotal > 5000 ? 0 : 200;
   const shippingCost =
     shippingMethod === "Express" && isKarachi ? expressShippingCost : standardShippingCost;
+
+  const paymentTracked = React.useRef(false);
+  React.useEffect(() => {
+    if (step === 2 && !paymentTracked.current && items.length > 0) {
+      paymentTracked.current = true;
+      trackAddPaymentInfo(paymentMethod, subtotal + shippingCost, items);
+    }
+  }, [step, paymentMethod, subtotal, shippingCost, items]);
 
   // Trust scoring
   const trustScore = {

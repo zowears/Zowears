@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import { JsonLd } from "@/components/SEO/JsonLd";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { MetaPixel } from "@/components/MetaPixel";
+import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
 export const metadata = {
@@ -108,6 +109,7 @@ export default function RootLayout({ children }) {
           <Suspense fallback={null}>
             <MetaPixel />
           </Suspense>
+          <CookieConsent />
         </Providers>
         </body>
     </html>

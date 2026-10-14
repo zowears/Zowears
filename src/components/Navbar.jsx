@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/assets/Zowear.png";
 import Image from "next/image";
 import { formatPrice } from "@/lib/products";
+import { trackSearch } from "@/lib/analytics";
 
 const nav = [
   { label: "Shop All", to: "/shop" },
@@ -61,6 +62,14 @@ export function Navbar() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000,
   });
+
+  const lastTrackedQuery = React.useRef("");
+  React.useEffect(() => {
+    if (debouncedQuery.trim().length >= 2 && !isSearching && lastTrackedQuery.current !== debouncedQuery.trim()) {
+      lastTrackedQuery.current = debouncedQuery.trim();
+      trackSearch(debouncedQuery.trim(), searchResults.length);
+    }
+  }, [debouncedQuery, searchResults.length, isSearching]);
 
   const closeSearch = () => {
     setSearch(false);

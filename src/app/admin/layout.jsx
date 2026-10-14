@@ -12,6 +12,7 @@ import {
   LogOut,
   User,
   Scissors,
+  BarChart3,
   Loader2
 } from "lucide-react";
 
@@ -65,6 +66,7 @@ export default function AdminLayout({ children }) {
 
   const menuItems = [
     { name: "Overview", icon: LayoutDashboard, href: "/admin" },
+    { name: "Analytics", icon: BarChart3, href: "/admin/analytics" },
     { name: "Customers", icon: User, href: "/admin/customers" },
     { name: "Products", icon: Package, href: "/admin/products" },
     { name: "Designs", icon: Scissors, href: "/admin/designs" },

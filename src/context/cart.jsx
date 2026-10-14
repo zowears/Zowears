@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { products } from "@/lib/products";
+import { trackAddToCart } from "@/lib/analytics";
 
 const Ctx = React.createContext(null);
 
@@ -10,16 +11,7 @@ export function CartProvider({ children }) {
   const [open, setOpen] = React.useState(false);
 
   const add = React.useCallback((item) => {
-    if (typeof window !== "undefined" && window.fbq) {
-      window.fbq("track", "AddToCart", {
-        content_name: item.name,
-        content_ids: [item.productId],
-        content_type: 'product',
-        value: item.price || 0,
-        currency: 'PKR',
-        quantity: item.qty || 1
-      });
-    }
+    trackAddToCart(item);
 
     setItems((prev) => {
       const idx = prev.findIndex(

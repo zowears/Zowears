@@ -1,26 +1,47 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
+import { initMetaCookies, trackPageView, getConsent } from "@/lib/analytics";
 
-export function MetaPixel() {
+function PixelRouteTracker({ pixelId }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const lastPath = useRef("");
 
   useEffect(() => {
-    if (pixelId && typeof window !== "undefined" && window.fbq) {
-      window.fbq("track", "PageView");
+    // Capture fbclid and initialize cookies on mount & URL change
+    initMetaCookies();
+
+    const fullPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+
+    // Avoid duplicate firing on identical path
+    if (lastPath.current !== fullPath) {
+      lastPath.current = fullPath;
+      if (getConsent() !== "denied") {
+        trackPageView(fullPath);
+      }
     }
   }, [pathname, searchParams, pixelId]);
 
-  if (!pixelId) return null;
+  return null;
+}
+
+export function MetaPixel() {
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
+  if (!pixelId) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Meta Pixel] NEXT_PUBLIC_META_PIXEL_ID is not configured in environment variables.");
+    }
+    return null;
+  }
 
   return (
     <>
       <Script
-        id="meta-pixel"
+        id="meta-pixel-init"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
@@ -32,11 +53,12 @@ export function MetaPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
+            
             fbq('init', '${pixelId}');
-            fbq('track', 'PageView');
           `,
         }}
       />
+      <PixelRouteTracker pixelId={pixelId} />
       <noscript>
         <img
           height="1"
