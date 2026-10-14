@@ -26,7 +26,18 @@ export default function AdminLayout({ children }) {
       setAuthorized(true);
       return;
     }
-    const token = localStorage.getItem("admin_token");
+
+    let token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
+    if (!token && typeof document !== "undefined") {
+      const match = document.cookie.match(/(?:^|;\s*)(?:__admin_token|__admin_token_client)=([^;]+)/);
+      if (match && match[1]) {
+        token = match[1];
+        try {
+          localStorage.setItem("admin_token", token);
+        } catch {}
+      }
+    }
+
     if (!token) {
       router.replace("/admin/login");
     } else {
@@ -36,8 +47,13 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     localStorage.removeItem("admin_token");
+    const isProd = typeof window !== "undefined" && window.location.hostname.includes("zowears.com");
     document.cookie = "__admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
     document.cookie = "__admin_token_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    if (isProd) {
+      document.cookie = "__admin_token=; path=/; domain=.zowears.com; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      document.cookie = "__admin_token_client=; path=/; domain=.zowears.com; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    }
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     try {

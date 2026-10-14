@@ -16,6 +16,13 @@ export default function AdminLoginPage() {
   const [locked, setLocked] = React.useState(false);
   const [lockTimer, setLockTimer] = React.useState(0);
 
+  // Canonical redirect: Ensure admin is always accessed on www.zowears.com in production
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hostname === "zowears.com") {
+      window.location.replace(`https://www.zowears.com${window.location.pathname}${window.location.search}`);
+    }
+  }, []);
+
   // Client-side cooldown display (real lock is on server)
   React.useEffect(() => {
     if (!locked || lockTimer <= 0) return;
@@ -35,42 +42,71 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError("");
     try {
-      let res = await fetch(`${API_URL}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      let res = null;
 
-      // If backend is unavailable or not found, fallback to Next.js internal api route
-      if (!res.ok && res.status !== 401 && res.status !== 429) {
+      // 1. Try external backend API
+      try {
+        res = await fetch(`${API_URL}/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+      } catch (backendErr) {
+        console.warn("[Admin Login] Backend unreachable, trying internal API:", backendErr);
+      }
+
+      // 2. If backend failed, threw an error, or returned non-auth error, try Next.js internal API
+      if (!res || (!res.ok && res.status !== 401 && res.status !== 429)) {
         try {
           const fallbackRes = await fetch("/api/admin/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ password }),
           });
-          if (fallbackRes.ok || fallbackRes.status === 401 || fallbackRes.status === 429) {
+          if (fallbackRes) {
             res = fallbackRes;
           }
-        } catch {}
+        } catch (internalErr) {
+          console.error("[Admin Login] Internal API failed:", internalErr);
+        }
+      }
+
+      if (!res) {
+        setError("Connection error. Could not reach authentication server.");
+        return;
       }
 
       if (res.ok) {
         const data = await res.json();
         if (data.token) {
           localStorage.setItem("admin_token", data.token);
-          document.cookie = `__admin_token=${data.token}; path=/; max-age=28800; SameSite=Lax`;
-          document.cookie = `__admin_token_client=${data.token}; path=/; max-age=28800; SameSite=Lax`;
+
+          const isProd = window.location.hostname.includes("zowears.com");
+          const secure = window.location.protocol === "https:" ? "; Secure" : "";
+
+          // Set host-level cookie
+          document.cookie = `__admin_token=${data.token}; path=/; max-age=28800; SameSite=Lax${secure}`;
+          document.cookie = `__admin_token_client=${data.token}; path=/; max-age=28800; SameSite=Lax${secure}`;
+
+          // If on zowears.com, also set domain-wide cookie so www and apex both have it
+          if (isProd) {
+            document.cookie = `__admin_token=${data.token}; path=/; domain=.zowears.com; max-age=28800; SameSite=Lax${secure}`;
+            document.cookie = `__admin_token_client=${data.token}; path=/; domain=.zowears.com; max-age=28800; SameSite=Lax${secure}`;
+          }
         }
-        window.location.href = "/admin";
+
+        // Navigate to canonical host if needed
+        if (window.location.hostname === "zowears.com") {
+          window.location.href = "https://www.zowears.com/admin";
+        } else {
+          window.location.href = "/admin";
+        }
         return;
       }
 
-      const data = await res.json().catch(() => ({}));
-
       if (res.status === 429) {
         setLocked(true);
-        setLockTimer(900); // show 15-min countdown
+        setLockTimer(900);
         setError("Too many attempts. Access locked for 15 minutes.");
       } else {
         const newAttempts = attempts + 1;
@@ -78,7 +114,8 @@ export default function AdminLoginPage() {
         setError("Access denied. " + (5 - newAttempts > 0 ? `${5 - newAttempts} attempt${5 - newAttempts !== 1 ? "s" : ""} remaining.` : ""));
         setPassword("");
       }
-    } catch {
+    } catch (err) {
+      console.error("[Admin Login Error]:", err);
       setError("Connection error. Try again.");
     } finally {
       setLoading(false);
